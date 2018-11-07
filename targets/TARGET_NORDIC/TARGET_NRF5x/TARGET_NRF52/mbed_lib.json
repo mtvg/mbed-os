@@ -24,7 +24,6 @@
     "target_overrides": {
         "DELTA_DFBM_NQ620": {
             "target.macros_add": [
-                "CONFIG_GPIO_AS_PINRESET",
                 "NRF52_PAN_12",
                 "NRF52_PAN_15",
                 "NRF52_PAN_20",
@@ -46,7 +45,6 @@
         },
         "MTB_LAIRD_BL652": {
             "target.macros_add": [
-                "CONFIG_GPIO_AS_PINRESET",
                 "NRF52_PAN_12",
                 "NRF52_PAN_15",
                 "NRF52_PAN_20",
@@ -67,7 +65,6 @@
         },
         "MTB_UBLOX_NINA_B1": {
             "target.macros_add": [
-                "CONFIG_GPIO_AS_PINRESET",
                 "NRF52_PAN_12",
                 "NRF52_PAN_15",
                 "NRF52_PAN_20",
@@ -86,7 +83,6 @@
         },
         "NRF52_DK": {
             "target.macros_add": [
-                "CONFIG_GPIO_AS_PINRESET",
                 "NRF52_PAN_12",
                 "NRF52_PAN_15",
                 "NRF52_PAN_20",
@@ -105,7 +101,6 @@
         },
         "RBLAB_BLENANO2": {
             "target.macros_add": [
-                "CONFIG_GPIO_AS_PINRESET",
                 "NRF52_PAN_12",
                 "NRF52_PAN_15",
                 "NRF52_PAN_20",
@@ -124,7 +119,6 @@
         },
         "UBLOX_EVA_NINA": {
             "target.macros_add": [
-                "CONFIG_GPIO_AS_PINRESET",
                 "NRF52_PAN_12",
                 "NRF52_PAN_15",
                 "NRF52_PAN_20",
@@ -143,7 +137,6 @@
         },
         "UBLOX_EVK_NINA_B1": {
             "target.macros_add": [
-                "CONFIG_GPIO_AS_PINRESET",
                 "NRF52_PAN_12",
                 "NRF52_PAN_15",
                 "NRF52_PAN_20",
@@ -163,7 +156,6 @@
         },
         "VBLUNO52": {
             "target.macros_add": [
-                "CONFIG_GPIO_AS_PINRESET",
                 "NRF52_PAN_12",
                 "NRF52_PAN_15",
                 "NRF52_PAN_20",
@@ -183,13 +175,11 @@
         },
         "NRF52840_DK": {
             "target.macros_add": [
-                "CONFIG_GPIO_AS_PINRESET",
                 "NRF52_ERRATA_20"
             ]
         },
         "MTB_LAIRD_BL654": {
             "target.macros_add": [
-                "CONFIG_GPIO_AS_PINRESET",
                 "NRF52_ERRATA_20"
             ],
             "target.lf_clock_src": "NRF_LF_SRC_RC",

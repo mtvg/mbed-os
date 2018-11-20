@@ -19,6 +19,9 @@
 #include "ble/generic/GenericSecurityManager.h"
 #include "ble/generic/MemorySecurityDb.h"
 #include "ble/generic/FileSecurityDb.h"
+#include "fds.h"
+#define FDS_FILE_ID       0x0001  /* The ID of the file to write the records into. */
+#define FDS_RECORD_KEY    0x1111  /* A key for the first record. */
 
 using ble::pal::advertising_peer_address_type_t;
 using ble::pal::AuthenticationMask;
@@ -91,7 +94,74 @@ ble_error_t GenericSecurityManager::init(
         return result;
     }
 
+    fds_init();
+
     return BLE_ERROR_NONE;
+}
+
+static uint8_t savedLTKBytes[16] = {0};
+
+ret_code_t nordicFDSWriteLTK(ltk_t ltk) {
+
+    fds_record_desc_t   record_desc;
+    fds_record_t        record;
+
+    int i;
+    for (i = 0; i < ltk.size(); i++)
+    {
+        savedLTKBytes[i] = ltk[i];
+    }
+
+    record.file_id           = FDS_FILE_ID;
+    record.key               = FDS_RECORD_KEY;
+    record.data.p_data       = &savedLTKBytes;
+    record.data.length_words = 4;   /* one word is four bytes. */
+
+    ret_code_t rc = fds_record_write(&record_desc, &record);
+
+    if (rc != FDS_SUCCESS) {
+        printf("Error saving LTK %i\r\n", rc);
+    }
+    return rc;
+}
+
+ltk_t nordicFDSReadLTK() {
+
+    fds_record_desc_t   record_desc;
+    fds_flash_record_t  flash_record;
+    fds_find_token_t    ftok;
+    /* It is required to zero the token before first use. */
+    memset(&ftok, 0x00, sizeof(fds_find_token_t));
+    /* Loop until all records with the given key and file ID have been found. */
+    while (fds_record_find(FDS_FILE_ID, FDS_RECORD_KEY, &record_desc, &ftok) == FDS_SUCCESS)
+    {
+        if (fds_record_open(&record_desc, &flash_record) != FDS_SUCCESS)
+        {
+            return NULL;
+        }
+
+        
+        char *table = (char*)flash_record.p_data;
+        int i;
+        for (i = 0; i < flash_record.p_header->length_words; i++)
+        {
+            savedLTKBytes[i*4+0] = table[i*4+0];
+            savedLTKBytes[i*4+1] = table[i*4+1];
+            savedLTKBytes[i*4+2] = table[i*4+2];
+            savedLTKBytes[i*4+3] = table[i*4+3];
+        }
+
+        /* Access the record through the flash_record structure. */
+        /* Close the record when done. */
+        if (fds_record_close(&record_desc) != FDS_SUCCESS)
+        {
+            /* Handle error. */
+        }
+
+        return ltk_t(savedLTKBytes);
+    }
+
+    return NULL;
 }
 
 ble_error_t GenericSecurityManager::setDatabaseFilepath(
@@ -491,11 +561,15 @@ ble_error_t GenericSecurityManager::setLinkEncryption(
 
     } else if (encryption == link_encryption_t::ENCRYPTED_WITH_MITM) {
 
+        printf("let's encrypt\r\n");
+
         if (flags->ltk_mitm_protected && !cb->encrypted) {
             cb->encryption_requested = true;
+            printf("enable_encryption\r\n");
             return enable_encryption(connection);
         } else {
             cb->encryption_requested = true;
+            printf("requestAuthentication\r\n");
             return requestAuthentication(connection);
         }
 
@@ -936,16 +1010,42 @@ void GenericSecurityManager::set_ltk_cb(
         return;
     }
 
-    if (entryKeys) {
+    printf("%s\n\r", "entryKeys????");
+
+    ltk_t ltk = nordicFDSReadLTK();
+
+    if (ltk != NULL) {
+
+        printf("RESTORING LTK: ");
+        int i;
+        for (i = 0; i < ltk.size(); i++)
+        {
+            if (i > 0) printf(",");
+            printf("0x%02X", ltk[i]);
+        }
+        printf("\n\r");
+
         _pal.set_ltk(
             cb->connection,
-            entryKeys->ltk,
+            ltk,
             flags->ltk_mitm_protected,
             flags->secure_connections_paired
         );
     } else {
+        printf("NO LTK FOUND\n\r");
         _pal.set_ltk_not_found(cb->connection);
     }
+
+    // if (entryKeys) {
+    //     _pal.set_ltk(
+    //         cb->connection,
+    //         entryKeys->ltk,
+    //         flags->ltk_mitm_protected,
+    //         flags->secure_connections_paired
+    //     );
+    // } else {
+    //     _pal.set_ltk_not_found(cb->connection);
+    // }
 }
 
 void GenericSecurityManager::set_peer_csrk_cb(
@@ -1359,6 +1459,7 @@ void GenericSecurityManager::on_passkey_display(
     passkey_num_t passkey
 ) {
     set_mitm_performed(connection);
+    printf("on_passkey_display\r\n");
     eventHandler->passkeyDisplay(connection, PasskeyAscii(passkey).value());
 }
 
@@ -1462,6 +1563,17 @@ void GenericSecurityManager::on_secure_connections_ltk_generated(
 
     flags->ltk_mitm_protected = cb->mitm_performed;
     flags->secure_connections_paired = true;
+
+    printf("SAVING LTK: ");
+    int i;
+    for (i = 0; i < ltk.size(); i++)
+    {
+        if (i > 0) printf(",");
+        printf("0x%02X", ltk[i]);
+    }
+    printf("\n\r");
+
+    nordicFDSWriteLTK(ltk);
 
     _db->set_entry_peer_ltk(cb->db_entry, ltk);
     _db->set_entry_local_ltk(cb->db_entry, ltk);
@@ -1610,6 +1722,8 @@ void GenericSecurityManager::on_ltk_request(
         return;
     }
 
+    printf("%s\n\r", "GenericSecurityManager::on_ltk_request connection_handle_t ediv_t rand_t");
+
     _db->get_entry_local_keys(
         mbed::callback(this, &GenericSecurityManager::set_ltk_cb),
         cb->db_entry,
@@ -1647,6 +1761,8 @@ void GenericSecurityManager::on_ltk_request(connection_handle_t connection)
     if (!cb) {
         return;
     }
+
+    printf("%s\n\r", "GenericSecurityManager::on_ltk_request");
 
     _db->get_entry_local_keys(
         mbed::callback(this, &GenericSecurityManager::set_ltk_cb),

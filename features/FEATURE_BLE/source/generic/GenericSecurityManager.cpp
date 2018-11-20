@@ -101,7 +101,24 @@ ble_error_t GenericSecurityManager::init(
 
 static uint8_t savedLTKBytes[16] = {0};
 
+ret_code_t nordicFDSDeleteLTK() {
+    fds_record_desc_t   record_desc;
+    fds_find_token_t    ftok;
+    /* It is required to zero the token before first use. */
+    memset(&ftok, 0x00, sizeof(fds_find_token_t));
+    /* Loop until all records with the given key and file ID have been found. */
+    ret_code_t ret;
+
+    while (fds_record_find(FDS_FILE_ID, FDS_RECORD_KEY, &record_desc, &ftok) == FDS_SUCCESS) {
+        ret = fds_record_delete(&record_desc);
+    }
+
+    return ret;
+}
+
 ret_code_t nordicFDSWriteLTK(ltk_t ltk) {
+
+    nordicFDSDeleteLTK();
 
     fds_record_desc_t   record_desc;
     fds_record_t        record;

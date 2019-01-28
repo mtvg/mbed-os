@@ -15,6 +15,10 @@
  */
 
 #include "SlicingBlockDevice.h"
+#include "platform/mbed_assert.h"
+#include "stddef.h"
+
+namespace mbed {
 
 
 SlicingBlockDevice::SlicingBlockDevice(BlockDevice *bd, bd_addr_t start, bd_addr_t stop)
@@ -116,3 +120,15 @@ bd_size_t SlicingBlockDevice::size() const
 {
     return _stop - _start;
 }
+
+const char *SlicingBlockDevice::get_type() const
+{
+    if (_bd != NULL) {
+        return _bd->get_type();
+    }
+
+    return NULL;
+}
+
+} // namespace mbed
+

@@ -19,11 +19,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+/** \addtogroup storage */
+/** @{*/
+
 #ifndef MBED_EXHAUSTIBLE_BLOCK_DEVICE_H
 #define MBED_EXHAUSTIBLE_BLOCK_DEVICE_H
 
 #include "BlockDevice.h"
 
+namespace mbed {
 
 /** Heap backed block device which simulates failures
  *
@@ -31,8 +36,7 @@
  * after a configurable number of cycles.
  *
  */
-class ExhaustibleBlockDevice : public BlockDevice
-{
+class ExhaustibleBlockDevice : public BlockDevice {
 public:
     /** Lifetime of the block device
      *
@@ -150,6 +154,12 @@ public:
      */
     virtual bd_size_t size() const;
 
+    /** Get the BlockDevice class type.
+     *
+     *  @return         A string represent the BlockDevice class type.
+     */
+    virtual const char *get_type() const;
+
 private:
     BlockDevice *_bd;
     uint32_t *_erase_array;
@@ -158,5 +168,13 @@ private:
     bool _is_initialized;
 };
 
+} // namespace mbed
+
+// Added "using" for backwards compatibility
+#ifndef MBED_NO_GLOBAL_USING_DIRECTIVE
+using mbed::ExhaustibleBlockDevice;
+#endif
 
 #endif
+
+/** @}*/

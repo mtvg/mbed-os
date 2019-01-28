@@ -23,6 +23,7 @@
 #include "ObservingBlockDevice.h"
 #include "ReadOnlyBlockDevice.h"
 
+namespace mbed {
 
 ObservingBlockDevice::ObservingBlockDevice(BlockDevice *bd)
     : _bd(bd)
@@ -109,3 +110,15 @@ bd_size_t ObservingBlockDevice::size() const
 {
     return _bd->size();
 }
+
+const char *ObservingBlockDevice::get_type() const
+{
+    if (_bd != NULL) {
+        return _bd->get_type();
+    }
+
+    return NULL;
+}
+
+} // namespace mbed
+

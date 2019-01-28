@@ -18,20 +18,21 @@
 #include "UBLOX_AT.h"
 #include "UBLOX_AT_CellularNetwork.h"
 #include "UBLOX_AT_CellularPower.h"
+#include "UBLOX_AT_CellularContext.h"
 
 using namespace mbed;
 using namespace events;
 
-#ifdef TARGET_UBLOX_C030_R410M
+#ifdef TARGET_UBLOX_C030_R41XM
 static const AT_CellularBase::SupportedFeature unsupported_features[] =  {
     AT_CellularBase::AT_CGSN_WITH_TYPE,
     AT_CellularBase::SUPPORTED_FEATURE_END_MARK
 };
 #endif
 
-UBLOX_AT::UBLOX_AT(EventQueue &queue) : AT_CellularDevice(queue)
+UBLOX_AT::UBLOX_AT(FileHandle *fh) : AT_CellularDevice(fh)
 {
-#ifdef TARGET_UBLOX_C030_R410M
+#ifdef TARGET_UBLOX_C030_R41XM
     AT_CellularBase::set_unsupported_features(unsupported_features);
 #endif
 }
@@ -48,4 +49,9 @@ AT_CellularNetwork *UBLOX_AT::open_network_impl(ATHandler &at)
 AT_CellularPower *UBLOX_AT::open_power_impl(ATHandler &at)
 {
     return new UBLOX_AT_CellularPower(at);
+}
+
+AT_CellularContext *UBLOX_AT::create_context_impl(ATHandler &at, const char *apn)
+{
+    return new UBLOX_AT_CellularContext(at, this, apn);
 }

@@ -19,6 +19,7 @@ set(unittest-test-sources
   features/netsocket/TCPSocket/test_TCPSocket.cpp
   stubs/Mutex_stub.cpp
   stubs/mbed_assert_stub.c
+  stubs/mbed_critical_stub.c
   stubs/equeue_stub.c
   stubs/EventQueue_stub.cpp
   stubs/mbed_shared_queues_stub.cpp
@@ -26,4 +27,5 @@ set(unittest-test-sources
   stubs/EventFlags_stub.cpp
   stubs/stoip4_stub.c
   stubs/ip4tos_stub.c
+  stubs/SocketStats_Stub.cpp
 )

@@ -53,16 +53,13 @@ enum DeviceErrorType {
     DeviceErrorTypeErrorCME     // AT ERROR CME
 };
 
-/* struct used when getting at response error. Defines error code and type */
+/** AT response error with error code and type */
 struct device_err_t {
     DeviceErrorType errType;
     int errCode;
 };
 
-/** Class ATHandler
- *
- *  Class for sending AT commands and parsing AT responses.
- */
+/// Class for sending AT commands and parsing AT responses.
 class ATHandler {
 
 public:
@@ -74,7 +71,7 @@ public:
      *  @param output_delimiter delimiter used when parsing at responses, "\r" should be used as output_delimiter
      *  @param send_delay       the minimum delay in ms between the end of last response and the beginning of a new command
      */
-    ATHandler(FileHandle *fh, events::EventQueue &queue, int timeout, const char *output_delimiter, uint16_t send_delay = 0);
+    ATHandler(FileHandle *fh, events::EventQueue &queue, uint32_t timeout, const char *output_delimiter, uint16_t send_delay = 0);
     virtual ~ATHandler();
 
     /** Return used file handle.
@@ -82,6 +79,32 @@ public:
      *  @return used file handle
      */
     FileHandle *get_file_handle();
+
+    /** Get a new ATHandler instance, and update the linked list. Once the use of the ATHandler
+     *  has finished, call to close() has to be made
+     *
+     *  @param fileHandle       filehandle used for reading AT responses and writing AT commands.
+     *                          If there is already an ATHandler with the same fileHandle pointer,
+     *                          then a pointer to that ATHandler instance will be returned with
+     *                          that ATHandler's queue, timeout, delimiter, send_delay and debug_on
+     *                          values
+     *  @param queue            Event queue used to transfer sigio events to this thread
+     *  @param timeout          Timeout when reading for AT response
+     *  @param delimiter        delimiter used when parsing at responses, "\r" should be used as output_delimiter
+     *  @param send_delay       the minimum delay in ms between the end of last response and the beginning of a new command
+     *  @param debug_on         Set true to enable debug traces
+     *  @return                 NULL, if fileHandle is not set, or a pointer to an existing ATHandler, if the fileHandle is
+     *                          already in use. Otherwise a pointer to a new ATHandler instance is returned
+     */
+    static ATHandler *get_instance(FileHandle *fileHandle, events::EventQueue &queue, uint32_t timeout,
+                                   const char *delimiter, uint16_t send_delay, bool debug_on);
+
+    /** Close and delete the current ATHandler instance, if the reference count to it is 0.
+     *  Close() can be only called, if the ATHandler was opened with get_instance()
+     *
+     *  @return NSAPI_ERROR_OK on success, NSAPI_ERROR_PARAMETER on failure
+     */
+    nsapi_error_t close();
 
     /** Locks the mutex for file handle if AT_HANDLER_MUTEX is defined.
      */
@@ -127,10 +150,14 @@ public:
     device_err_t get_last_device_error() const;
 
     /** Increase reference count. Used for counting references to this instance.
+     *  Note that this should be used with care, if the ATHandler was taken into use
+     *  with get_instance()
      */
     void inc_ref_count();
 
     /** Decrease reference count. Used for counting references to this instance.
+     *  Note that this should be used with care, if the ATHandler was taken into use
+     *  with get_instance()
      */
     void dec_ref_count();
 
@@ -146,6 +173,13 @@ public:
      *  @param default_timeout       Store as default timeout
      */
     void set_at_timeout(uint32_t timeout_milliseconds, bool default_timeout = false);
+
+    /** Set timeout in milliseconds for all ATHandlers in the _atHandlers list
+     *
+     *  @param timeout_milliseconds  Timeout in milliseconds
+     *  @param default_timeout       Store as default timeout
+     */
+    static void set_at_timeout_list(uint32_t timeout_milliseconds, bool default_timeout = false);
 
     /** Restore timeout to previous timeout. Handy if there is a need to change timeout temporarily.
      */
@@ -181,6 +215,13 @@ public:
      */
     void set_is_filehandle_usable(bool usable);
 
+    /** Synchronize AT command and response handling to modem.
+     *
+     *  @param timeout_ms ATHandler timeout when trying to sync. Will be restored when function returns.
+     *  @return true is synchronization was successful, false in case of failure
+     */
+    bool sync(int timeout_ms);
+
 protected:
     void event();
 #ifdef AT_HANDLER_MUTEX
@@ -211,11 +252,11 @@ private:
     uint16_t _at_send_delay;
     uint64_t _last_response_stop;
 
-    bool _fh_sigio_set;
-
-    bool _processing;
+    bool _oob_queued;
     int32_t _ref_count;
     bool _is_fh_usable;
+
+    static ATHandler *_atHandlers;
 
     //*************************************
 public:
@@ -393,6 +434,12 @@ public: // just for debugging
      */
     void set_debug(bool debug_on);
 
+    /** Set debug_on for all ATHandlers in the _atHandlers list
+     *
+     *  @param debug_on Set true to enable debug traces
+     */
+    static void set_debug_list(bool debug_on);
+
 private:
 
     // should fit any prefix and int
@@ -524,7 +571,7 @@ private:
     bool find_urc_handler(const char *prefix);
 
     // print contents of a buffer to trace log
-    void debug_print(char *p, int len);
+    void debug_print(const char *p, int len);
 };
 
 } // namespace mbed

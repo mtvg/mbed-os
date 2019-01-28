@@ -1,5 +1,6 @@
 /* mbed Microcontroller Library
  * Copyright (c) 2018-2018 ARM Limited
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,14 +29,21 @@ static osMutexId_t               env_mutex_id;
 static mbed_rtos_storage_mutex_t env_mutex_obj;
 static osMutexAttr_t             env_mutex_attr;
 
+#if !defined(ISR_STACK_SIZE)
+extern uint32_t               __StackLimit;
+extern uint32_t               __StackTop;
+#define ISR_STACK_START       ((unsigned char*)&__StackLimit)
+#define ISR_STACK_SIZE        ((uint32_t)((uint32_t)&__StackTop - (uint32_t)&__StackLimit))
+#endif
+
 #if !defined(HEAP_START)
 /* Defined by linker script */
 extern uint32_t __end__[];
 #define HEAP_START      ((unsigned char*)__end__)
-#define HEAP_SIZE       ((uint32_t)((uint32_t)INITIAL_SP - (uint32_t)HEAP_START))
+#define HEAP_SIZE       ((uint32_t)((uint32_t)ISR_STACK_START - (uint32_t)HEAP_START))
 #endif
 
-extern void __libc_init_array (void);
+extern void __libc_init_array(void);
 
 /*
  * mbed entry point for the GCC toolchain
@@ -86,7 +94,8 @@ void mbed_toolchain_init()
 }
 
 extern int __real_main(void);
-int __wrap_main(void) {
+int __wrap_main(void)
+{
     /* For backwards compatibility */
     return __real_main();
 }
@@ -94,22 +103,22 @@ int __wrap_main(void) {
 /* Opaque declaration of _reent structure */
 struct _reent;
 
-void __rtos_malloc_lock( struct _reent *_r )
+void __rtos_malloc_lock(struct _reent *_r)
 {
     osMutexAcquire(malloc_mutex_id, osWaitForever);
 }
 
-void __rtos_malloc_unlock( struct _reent *_r )
+void __rtos_malloc_unlock(struct _reent *_r)
 {
     osMutexRelease(malloc_mutex_id);
 }
 
-void __rtos_env_lock( struct _reent *_r )
+void __rtos_env_lock(struct _reent *_r)
 {
     osMutexAcquire(env_mutex_id, osWaitForever);
 }
 
-void __rtos_env_unlock( struct _reent *_r )
+void __rtos_env_unlock(struct _reent *_r)
 {
     osMutexRelease(env_mutex_id);
 }

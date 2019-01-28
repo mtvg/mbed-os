@@ -1,7 +1,4 @@
-
-/** \addtogroup netsocket */
-/** @{*/
-/* TCPSocket
+/*
  * Copyright (c) 2015 ARM Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/** @file TCPSocket.h TCPSocket class */
+/** \addtogroup netsocket
+ * @{*/
 
 #ifndef TCPSOCKET_H
 #define TCPSOCKET_H
@@ -42,8 +43,14 @@ public:
      *  network interface.
      *
      *  @param stack    Network stack as target for socket
+     *
+     *  @deprecated since mbed-os-5.11
      */
     template <typename S>
+    MBED_DEPRECATED_SINCE("mbed-os-5.11",
+                          "The TCPSocket(S *stack) constructor is deprecated."
+                          "It discards the open() call return value."
+                          "Use another constructor and call open() explicitly, instead.")
     TCPSocket(S *stack)
     {
         open(stack);

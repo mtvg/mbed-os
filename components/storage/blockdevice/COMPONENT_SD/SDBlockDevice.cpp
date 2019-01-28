@@ -136,7 +136,7 @@
  */
 
 /* If the target has no SPI support then SDCard is not supported */
-#ifdef DEVICE_SPI
+#if DEVICE_SPI
 
 #include "SDBlockDevice.h"
 #include "platform/mbed_debug.h"
@@ -146,6 +146,8 @@
 #endif
 #include <inttypes.h>
 #include <errno.h>
+
+using namespace mbed;
 
 #ifndef MBED_CONF_SD_CMD_TIMEOUT
 #define MBED_CONF_SD_CMD_TIMEOUT                 5000   /*!< Timeout in ms for response */
@@ -247,9 +249,15 @@
 // Only HC block size is supported. Making this a static constant reduces code size.
 const uint32_t SDBlockDevice::_block_size = BLOCK_SIZE_HC;
 
+#if MBED_CONF_SD_CRC_ENABLED
 SDBlockDevice::SDBlockDevice(PinName mosi, PinName miso, PinName sclk, PinName cs, uint64_t hz, bool crc_on)
     : _sectors(0), _spi(mosi, miso, sclk), _cs(cs), _is_initialized(0),
-      _crc_on(crc_on), _init_ref_count(0), _crc16(0, 0, false, false)
+      _init_ref_count(0), _crc_on(crc_on), _crc16(0, 0, false, false)
+#else
+SDBlockDevice::SDBlockDevice(PinName mosi, PinName miso, PinName sclk, PinName cs, uint64_t hz, bool crc_on)
+    : _sectors(0), _spi(mosi, miso, sclk), _cs(cs), _is_initialized(0),
+      _init_ref_count(0)
+#endif
 {
     _cs = 1;
     _card_type = SDCARD_NONE;
@@ -293,10 +301,12 @@ int SDBlockDevice::_initialise_card()
         return status;
     }
 
+#if MBED_CONF_SD_CRC_ENABLED
     if (_crc_on) {
         // Enable CRC
         status = _cmd(CMD59_CRC_ON_OFF, _crc_on);
     }
+#endif
 
     // Read OCR - CMD58 Response contains OCR register
     if (BD_ERROR_OK != (status = _cmd(CMD58_READ_OCR, 0x0, 0x0, &response))) {
@@ -350,10 +360,15 @@ int SDBlockDevice::_initialise_card()
         debug_if(SD_DBG, "Card Initialized: Version 1.x Card\n");
     }
 
+#if MBED_CONF_SD_CRC_ENABLED
     if (!_crc_on) {
         // Disable CRC
         status = _cmd(CMD59_CRC_ON_OFF, _crc_on);
     }
+#else
+    status = _cmd(CMD59_CRC_ON_OFF, 0);
+#endif
+
     return status;
 }
 
@@ -617,6 +632,11 @@ bd_size_t SDBlockDevice::size() const
     return _block_size * _sectors;
 }
 
+const char *SDBlockDevice::get_type() const
+{
+    return "SD";
+}
+
 void SDBlockDevice::debug(bool dbg)
 {
     _dbg = dbg;
@@ -649,7 +669,6 @@ uint8_t SDBlockDevice::_cmd_spi(SDBlockDevice::cmdSupported cmd, uint32_t arg)
 {
     uint8_t response;
     char cmdPacket[PACKET_SIZE];
-    uint32_t crc;
 
     // Prepare the command packet
     cmdPacket[0] = SPI_CMD(cmd);
@@ -658,10 +677,14 @@ uint8_t SDBlockDevice::_cmd_spi(SDBlockDevice::cmdSupported cmd, uint32_t arg)
     cmdPacket[3] = (arg >> 8);
     cmdPacket[4] = (arg >> 0);
 
+#if MBED_CONF_SD_CRC_ENABLED
+    uint32_t crc;
     if (_crc_on) {
         _crc7.compute((void *)cmdPacket, 5, &crc);
         cmdPacket[5] = (char)(crc | 0x01);
-    } else {
+    } else
+#endif
+    {
         // CMD0 is executed in SD mode, hence should have correct CRC
         // CMD8 CRC verification is always enabled
         switch (cmd) {
@@ -773,7 +796,7 @@ int SDBlockDevice::_cmd(SDBlockDevice::cmdSupported cmd, uint32_t arg, bool isAc
     switch (cmd) {
         case CMD8_SEND_IF_COND:             // Response R7
             debug_if(_dbg, "V2-Version Card\n");
-            _card_type = SDCARD_V2;
+            _card_type = SDCARD_V2; // fallthrough
         // Note: No break here, need to read rest of the response
         case CMD58_READ_OCR:                // Response R3
             response  = (_spi.write(SPI_FILL_CHAR) << 24);
@@ -874,6 +897,7 @@ int SDBlockDevice::_read_bytes(uint8_t *buffer, uint32_t length)
     crc = (_spi.write(SPI_FILL_CHAR) << 8);
     crc |= _spi.write(SPI_FILL_CHAR);
 
+#if MBED_CONF_SD_CRC_ENABLED
     if (_crc_on) {
         uint32_t crc_result;
         // Compute and verify checksum
@@ -885,6 +909,7 @@ int SDBlockDevice::_read_bytes(uint8_t *buffer, uint32_t length)
             return SD_BLOCK_DEVICE_ERROR_CRC;
         }
     }
+#endif
 
     _deselect();
     return 0;
@@ -907,6 +932,7 @@ int SDBlockDevice::_read(uint8_t *buffer, uint32_t length)
     crc = (_spi.write(SPI_FILL_CHAR) << 8);
     crc |= _spi.write(SPI_FILL_CHAR);
 
+#if MBED_CONF_SD_CRC_ENABLED
     if (_crc_on) {
         uint32_t crc_result;
         // Compute and verify checksum
@@ -917,6 +943,7 @@ int SDBlockDevice::_read(uint8_t *buffer, uint32_t length)
             return SD_BLOCK_DEVICE_ERROR_CRC;
         }
     }
+#endif
 
     return 0;
 }
@@ -933,10 +960,12 @@ uint8_t SDBlockDevice::_write(const uint8_t *buffer, uint8_t token, uint32_t len
     // write the data
     _spi.write((char *)buffer, length, NULL, 0);
 
+#if MBED_CONF_SD_CRC_ENABLED
     if (_crc_on) {
         // Compute CRC
         _crc16.compute((void *)buffer, length, &crc);
     }
+#endif
 
     // write the checksum CRC16
     _spi.write(crc >> 8);

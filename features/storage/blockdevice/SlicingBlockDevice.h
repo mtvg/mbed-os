@@ -19,34 +19,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+/** \addtogroup storage */
+/** @{*/
+
 #ifndef MBED_SLICING_BLOCK_DEVICE_H
 #define MBED_SLICING_BLOCK_DEVICE_H
 
 #include "BlockDevice.h"
 #include "platform/mbed_assert.h"
 
+namespace mbed {
+
 /** Block device for mapping to a slice of another block device
- *
- *  @code
- *  #include "mbed.h"
- *  #include "HeapBlockDevice.h"
- *  #include "SlicingBlockDevice.h"
- *
- *  // Create a block device with 64 blocks of size 512
- *  HeapBlockDevice mem(64*512, 512);
- *
- *  // Create a block device that maps to the first 32 blocks
- *  SlicingBlockDevice slice1(&mem, 0*512, 32*512);
- *
- *  // Create a block device that maps to the last 32 blocks
- *  SlicingBlockDevice slice2(&mem, 32*512);
- *
- *  // Create a block device that maps to the middle 32 blocks
- *  SlicingBlockDevice slice3(&mem, 16*512, -16*512);
- * @endcode
  */
-class SlicingBlockDevice : public BlockDevice
-{
+class SlicingBlockDevice : public BlockDevice {
 public:
     /** Lifetime of the memory block device
      *
@@ -87,7 +74,7 @@ public:
      *  @param buffer   Buffer to read blocks into
      *  @param addr     Address of block to begin reading from
      *  @param size     Size to read in bytes, must be a multiple of read block size
-     *  @return         0 on success, negative error code on failure
+     *  @return         0 on success or a negative error code on failure
      */
     virtual int read(void *buffer, bd_addr_t addr, bd_size_t size);
 
@@ -98,7 +85,7 @@ public:
      *  @param buffer   Buffer of data to write to blocks
      *  @param addr     Address of block to begin writing to
      *  @param size     Size to write in bytes, must be a multiple of program block size
-     *  @return         0 on success, negative error code on failure
+     *  @return         0 on success or a negative error code on failure
      */
     virtual int program(const void *buffer, bd_addr_t addr, bd_size_t size);
 
@@ -109,7 +96,7 @@ public:
      *
      *  @param addr     Address of block to begin erasing
      *  @param size     Size to erase in bytes, must be a multiple of erase block size
-     *  @return         0 on success, negative error code on failure
+     *  @return         0 on success or a negative error code on failure
      */
     virtual int erase(bd_addr_t addr, bd_size_t size);
 
@@ -158,6 +145,12 @@ public:
      */
     virtual bd_size_t size() const;
 
+    /** Get the BlockDevice class type.
+     *
+     *  @return         A string represent the BlockDevice class type.
+     */
+    virtual const char *get_type() const;
+
 protected:
     BlockDevice *_bd;
     bool _start_from_end;
@@ -166,5 +159,13 @@ protected:
     bd_size_t _stop;
 };
 
+} // namespace mbed
+
+// Added "using" for backwards compatibility
+#ifndef MBED_NO_GLOBAL_USING_DIRECTIVE
+using mbed::SlicingBlockDevice;
+#endif
 
 #endif
+
+/** @}*/

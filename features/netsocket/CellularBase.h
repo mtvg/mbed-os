@@ -13,13 +13,18 @@
  * limitations under the License.
  */
 
+/* @file CellularBase.h CellularBase */
+
+/** @addtogroup netinterface
+ * @{
+ */
+
 #ifndef CELLULAR_BASE_H
 #define CELLULAR_BASE_H
 
 #include "netsocket/NetworkInterface.h"
 
 /** Common interface that is shared between cellular interfaces.
- *  @addtogroup netsocket
  */
 class CellularBase: public NetworkInterface {
 
@@ -44,6 +49,12 @@ public:
      */
     virtual void set_credentials(const char *apn, const char *uname = 0,
                                  const char *pwd = 0) = 0;
+
+    /** Set the plmn. PLMN controls to what network device registers.
+     *
+     *  @param plmn     user to force what network to register.
+     */
+    virtual void set_plmn(const char *plmn) = 0;
 
     /** Set the PIN code for SIM card.
      *

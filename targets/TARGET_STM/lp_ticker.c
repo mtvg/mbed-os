@@ -38,15 +38,19 @@
 #include "lp_ticker_api.h"
 #include "mbed_error.h"
 
+#if !defined(LPTICKER_DELAY_TICKS) || (LPTICKER_DELAY_TICKS < 3)
+#warning "lpticker_delay_ticks value should be set to 3"
+#endif
+
 LPTIM_HandleTypeDef LptimHandle;
 
 const ticker_info_t *lp_ticker_get_info()
 {
     static const ticker_info_t info = {
 #if MBED_CONF_TARGET_LSE_AVAILABLE
-        LSE_VALUE,
+        LSE_VALUE / MBED_CONF_TARGET_LPTICKER_LPTIM_CLOCK,
 #else
-        LSI_VALUE,
+        LSI_VALUE / MBED_CONF_TARGET_LPTICKER_LPTIM_CLOCK,
 #endif
         16
     };
@@ -119,16 +123,26 @@ void lp_ticker_init(void)
     LptimHandle.Instance = LPTIM1;
     LptimHandle.State = HAL_LPTIM_STATE_RESET;
     LptimHandle.Init.Clock.Source = LPTIM_CLOCKSOURCE_APBCLOCK_LPOSC;
+#if defined(MBED_CONF_TARGET_LPTICKER_LPTIM_CLOCK)
+#if (MBED_CONF_TARGET_LPTICKER_LPTIM_CLOCK == 4)
+    LptimHandle.Init.Clock.Prescaler = LPTIM_PRESCALER_DIV4;
+#elif (MBED_CONF_TARGET_LPTICKER_LPTIM_CLOCK == 2)
+    LptimHandle.Init.Clock.Prescaler = LPTIM_PRESCALER_DIV2;
+#else
     LptimHandle.Init.Clock.Prescaler = LPTIM_PRESCALER_DIV1;
+#endif
+#else
+    LptimHandle.Init.Clock.Prescaler = LPTIM_PRESCALER_DIV1;
+#endif /* MBED_CONF_TARGET_LPTICKER_LPTIM_CLOCK */
 
     LptimHandle.Init.Trigger.Source = LPTIM_TRIGSOURCE_SOFTWARE;
     LptimHandle.Init.OutputPolarity = LPTIM_OUTPUTPOLARITY_HIGH;
     LptimHandle.Init.UpdateMode = LPTIM_UPDATE_IMMEDIATE;
     LptimHandle.Init.CounterSource = LPTIM_COUNTERSOURCE_INTERNAL;
-#if (TARGET_STM32L4)
+#if defined (LPTIM_INPUT1SOURCE_GPIO) /* STM32L4 */
     LptimHandle.Init.Input1Source = LPTIM_INPUT1SOURCE_GPIO;
     LptimHandle.Init.Input2Source = LPTIM_INPUT2SOURCE_GPIO;
-#endif /* TARGET_STM32L4 */
+#endif /* LPTIM_INPUT1SOURCE_GPIO */
 
     if (HAL_LPTIM_Init(&LptimHandle) != HAL_OK) {
         error("HAL_LPTIM_Init ERROR\n");
@@ -137,7 +151,7 @@ void lp_ticker_init(void)
 
     NVIC_SetVector(LPTIM1_IRQn, (uint32_t)LPTIM1_IRQHandler);
 
-#if !(TARGET_STM32L4)
+#if defined (__HAL_LPTIM_WAKEUPTIMER_EXTI_ENABLE_IT)
     /* EXTI lines are not configured by default */
     __HAL_LPTIM_WAKEUPTIMER_EXTI_ENABLE_IT();
     __HAL_LPTIM_WAKEUPTIMER_EXTI_ENABLE_RISING_EDGE();
@@ -145,6 +159,12 @@ void lp_ticker_init(void)
 
     __HAL_LPTIM_ENABLE_IT(&LptimHandle, LPTIM_IT_CMPM);
     HAL_LPTIM_Counter_Start(&LptimHandle, 0xFFFF);
+
+    /* Need to write a compare value in order to get LPTIM_FLAG_CMPOK in set_interrupt */
+    __HAL_LPTIM_CLEAR_FLAG(&LptimHandle, LPTIM_FLAG_CMPOK);
+    __HAL_LPTIM_COMPARE_SET(&LptimHandle, 0);
+    while (__HAL_LPTIM_GET_FLAG(&LptimHandle, LPTIM_FLAG_CMPOK) == RESET) {
+    }
 }
 
 static void LPTIM1_IRQHandler(void)
@@ -170,7 +190,8 @@ static void LPTIM1_IRQHandler(void)
         }
     }
 
-#if !(TARGET_STM32L4)
+#if defined (__HAL_LPTIM_WAKEUPTIMER_EXTI_CLEAR_FLAG)
+    /* EXTI lines are not configured by default */
     __HAL_LPTIM_WAKEUPTIMER_EXTI_CLEAR_FLAG();
 #endif
 }
@@ -191,12 +212,12 @@ void lp_ticker_set_interrupt(timestamp_t timestamp)
     LptimHandle.Instance = LPTIM1;
     irq_handler = (void (*)(void))lp_ticker_irq_handler;
 
-    __HAL_LPTIM_CLEAR_FLAG(&LptimHandle, LPTIM_FLAG_CMPOK);
-    __HAL_LPTIM_COMPARE_SET(&LptimHandle, timestamp);
     /* CMPOK is set by hardware to inform application that the APB bus write operation to the LPTIM_CMP register has been successfully completed */
     /* Any successive write before the CMPOK flag be set, will lead to unpredictable results */
-    while (__HAL_LPTIM_GET_FLAG(&LptimHandle, LPTIM_FLAG_CMPOK) == RESET) {
-    }
+    /* LPTICKER_DELAY_TICKS value prevents OS to call this set interrupt function before CMPOK */
+    MBED_ASSERT(__HAL_LPTIM_GET_FLAG(&LptimHandle, LPTIM_FLAG_CMPOK) == SET);
+    __HAL_LPTIM_CLEAR_FLAG(&LptimHandle, LPTIM_FLAG_CMPOK);
+    __HAL_LPTIM_COMPARE_SET(&LptimHandle, timestamp);
 
     lp_ticker_clear_interrupt();
 

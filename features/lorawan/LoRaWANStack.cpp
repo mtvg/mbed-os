@@ -73,11 +73,11 @@ LoRaWANStack::LoRaWANStack()
       _app_port(INVALID_PORT),
       _link_check_requested(false),
       _automatic_uplink_ongoing(false),
-      _ready_for_rx(true),
       _queue(NULL)
 {
     _tx_metadata.stale = true;
     _rx_metadata.stale = true;
+    core_util_atomic_flag_clear(&_rx_payload_in_use);
 
 #ifdef MBED_CONF_LORA_APP_PORT
     if (is_port_valid(MBED_CONF_LORA_APP_PORT)) {
@@ -310,6 +310,7 @@ int16_t LoRaWANStack::handle_tx(const uint8_t port, const uint8_t *data,
     if (_link_check_requested) {
         _loramac.setup_link_check_request();
     }
+    _qos_cnt = 1;
 
     lorawan_status_t status;
 
@@ -518,11 +519,10 @@ void LoRaWANStack::tx_interrupt_handler(void)
 void LoRaWANStack::rx_interrupt_handler(const uint8_t *payload, uint16_t size,
                                         int16_t rssi, int8_t snr)
 {
-    if (!_ready_for_rx || size > sizeof _rx_payload) {
+    if (size > sizeof _rx_payload || core_util_atomic_flag_test_and_set(&_rx_payload_in_use)) {
         return;
     }
 
-    _ready_for_rx = false;
     memcpy(_rx_payload, payload, size);
 
     const uint8_t *ptr = _rx_payload;
@@ -613,6 +613,8 @@ void LoRaWANStack::post_process_tx_with_reception()
                          _loramac.get_device_class() == CLASS_A ? "A" : "C");
                 _ctrl_flags &= ~TX_DONE_FLAG;
                 _ctrl_flags |= RETRY_EXHAUSTED_FLAG;
+                _loramac.post_process_mcps_req();
+                make_tx_metadata_available();
                 state_controller(DEVICE_STATE_STATUS_CHECK);
             }
         }
@@ -706,13 +708,13 @@ void LoRaWANStack::process_reception(const uint8_t *const payload, uint16_t size
         mlme_confirm_handler();
 
         if (_loramac.get_mlme_confirmation()->req_type == MLME_JOIN) {
-            _ready_for_rx = true;
+            core_util_atomic_flag_clear(&_rx_payload_in_use);
             return;
         }
     }
 
     if (!_loramac.nwk_joined()) {
-        _ready_for_rx = true;
+        core_util_atomic_flag_clear(&_rx_payload_in_use);
         return;
     }
 
@@ -741,7 +743,7 @@ void LoRaWANStack::process_reception(const uint8_t *const payload, uint16_t size
         mlme_indication_handler();
     }
 
-    _ready_for_rx = true;
+    core_util_atomic_flag_clear(&_rx_payload_in_use);
 }
 
 void LoRaWANStack::process_reception_timeout(bool is_timeout)
@@ -800,7 +802,7 @@ bool LoRaWANStack::is_port_valid(const uint8_t port, bool allow_port_0)
     //Application should not use reserved and illegal port numbers.
     if (port == 0) {
         return allow_port_0;
-    } else if (port == COMPLIANCE_TESTING_PORT){
+    } else if (port == COMPLIANCE_TESTING_PORT) {
 #if !defined(LORAWAN_COMPLIANCE_TEST)
         return false;
 #endif
@@ -943,9 +945,9 @@ void LoRaWANStack::mlme_confirm_handler()
 
             if (_callbacks.link_check_resp) {
                 const int ret = _queue->call(
-                        _callbacks.link_check_resp,
-                        _loramac.get_mlme_confirmation()->demod_margin,
-                        _loramac.get_mlme_confirmation()->nb_gateways);
+                                    _callbacks.link_check_resp,
+                                    _loramac.get_mlme_confirmation()->demod_margin,
+                                    _loramac.get_mlme_confirmation()->nb_gateways);
                 MBED_ASSERT(ret != 0);
                 (void) ret;
             }
@@ -1057,17 +1059,17 @@ void LoRaWANStack::mcps_indication_handler()
     if ((_loramac.get_device_class() != CLASS_C
             && mcps_indication->fpending_status)
             || (_loramac.get_device_class() == CLASS_C
-                    && mcps_indication->type == MCPS_CONFIRMED)) {
+                && mcps_indication->type == MCPS_CONFIRMED)) {
 #if (MBED_CONF_LORA_AUTOMATIC_UPLINK_MESSAGE)
-            // Do not queue an automatic uplink of there is one already outgoing
-            // This means we have not received an ack for the previous automatic uplink
-            if (!_automatic_uplink_ongoing) {
-                tr_debug("Sending empty uplink message...");
-                _automatic_uplink_ongoing = true;
-                const int ret = _queue->call(this, &LoRaWANStack::send_automatic_uplink_message, mcps_indication->port);
-                MBED_ASSERT(ret != 0);
-                (void)ret;
-            }
+        // Do not queue an automatic uplink of there is one already outgoing
+        // This means we have not received an ack for the previous automatic uplink
+        if (!_automatic_uplink_ongoing) {
+            tr_debug("Sending empty uplink message...");
+            _automatic_uplink_ongoing = true;
+            const int ret = _queue->call(this, &LoRaWANStack::send_automatic_uplink_message, mcps_indication->port);
+            MBED_ASSERT(ret != 0);
+            (void)ret;
+        }
 #else
         send_event_to_application(UPLINK_REQUIRED);
 #endif
@@ -1193,7 +1195,7 @@ void LoRaWANStack::process_joining_state(lorawan_status_t &op_status)
     }
 
     if (_device_current_state == DEVICE_STATE_AWAITING_JOIN_ACCEPT &&
-        _loramac.get_current_slot() != RX_SLOT_WIN_1) {
+            _loramac.get_current_slot() != RX_SLOT_WIN_1) {
         _device_current_state = DEVICE_STATE_JOINING;
         // retry join
         bool can_continue = _loramac.continue_joining_process();

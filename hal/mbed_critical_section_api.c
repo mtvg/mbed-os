@@ -1,6 +1,5 @@
 /* mbed Microcontroller Library
  * Copyright (c) 2017 ARM Limited
- * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +20,8 @@
 
 #include <stdbool.h>
 
-static bool critical_interrupts_enabled = false;
-static bool state_saved = false;
+static volatile bool critical_interrupts_enabled = false;
+static volatile bool state_saved = false;
 
 static bool are_interrupts_enabled(void)
 {

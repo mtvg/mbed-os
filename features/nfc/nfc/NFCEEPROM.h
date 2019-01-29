@@ -144,7 +144,6 @@ private:
 
     Delegate *_delegate;
     NFCEEPROMDriver *_driver;
-    events::EventQueue *_event_queue;
     bool _initialized;
 
     nfc_eeprom_operation_t _current_op;

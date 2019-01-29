@@ -345,7 +345,7 @@ static void serial_init_peripheral(serial_obj_t *obj)
     Cy_SCB_UART_Enable(obj->base);
 }
 
-#if DEVICE_SLEEP && DEVICE_LPTICKER && SERIAL_PM_CALLBACK_ENABLED
+#if DEVICE_SLEEP && DEVICE_LOWPOWERTIMER
 static cy_en_syspm_status_t serial_pm_callback(cy_stc_syspm_callback_params_t *params)
 {
     serial_obj_t *obj = (serial_obj_t *)params->context;
@@ -393,7 +393,7 @@ static cy_en_syspm_status_t serial_pm_callback(cy_stc_syspm_callback_params_t *p
     }
     return status;
 }
-#endif // DEVICE_SLEEP && DEVICE_LPTICKER
+#endif // DEVICE_SLEEP && DEVICE_LOWPOWERTIMER
 
 void serial_init(serial_t *obj_in, PinName tx, PinName rx)
 {
@@ -425,7 +425,7 @@ void serial_init(serial_t *obj_in, PinName tx, PinName rx)
             //Cy_GPIO_Write(Cy_GPIO_PortToAddr(CY_PORT(P13_6)), CY_PIN(P13_6), 1);
             serial_init_pins(obj);
             //Cy_GPIO_Write(Cy_GPIO_PortToAddr(CY_PORT(P13_6)), CY_PIN(P13_6), 0);
-#if DEVICE_SLEEP && DEVICE_LPTICKER && SERIAL_PM_CALLBACK_ENABLED
+#if DEVICE_SLEEP && DEVICE_LOWPOWERTIMER
             obj->pm_callback_handler.callback = serial_pm_callback;
             obj->pm_callback_handler.type = CY_SYSPM_DEEPSLEEP;
             obj->pm_callback_handler.skipMode = 0;
@@ -435,7 +435,7 @@ void serial_init(serial_t *obj_in, PinName tx, PinName rx)
             if (!Cy_SysPm_RegisterCallback(&obj->pm_callback_handler)) {
                 error("PM callback registration failed!");
             }
-#endif // DEVICE_SLEEP && DEVICE_LPTICKER
+#endif // DEVICE_SLEEP && DEVICE_LOWPOWERTIMER
             if (is_stdio) {
                 memcpy(&stdio_uart, obj_in, sizeof(serial_t));
                 stdio_uart_inited = true;
@@ -650,7 +650,6 @@ int serial_tx_asynch(serial_t *obj_in, const void *tx, size_t tx_length, uint8_t
         return 0;
     }
 
-    obj->tx_events = event;
     obj->async_handler = (cy_israddress)handler;
     if (serial_irq_setup_channel(obj) < 0) {
         return 0;
@@ -663,16 +662,17 @@ int serial_tx_asynch(serial_t *obj_in, const void *tx, size_t tx_length, uint8_t
     }
 
     if (tx_length > 0) {
+        obj->tx_events = event;
         obj_in->tx_buff.buffer = (void *)p_buf;
         obj_in->tx_buff.length = tx_length;
         obj_in->tx_buff.pos = 0;
         obj->tx_pending = true;
         // Enable interrupts to complete transmission.
-        Cy_SCB_SetTxInterruptMask(obj->base, CY_SCB_TX_INTR_LEVEL | CY_SCB_UART_TX_DONE);
+        Cy_SCB_SetRxInterruptMask(obj->base, CY_SCB_TX_INTR_LEVEL | CY_SCB_UART_TX_DONE);
 
     } else {
         // Enable interrupt to signal completing of the transmission.
-        Cy_SCB_SetTxInterruptMask(obj->base, CY_SCB_UART_TX_DONE);
+        Cy_SCB_SetRxInterruptMask(obj->base, CY_SCB_UART_TX_DONE);
     }
     return tx_length;
 }
@@ -739,7 +739,7 @@ int serial_irq_handler_asynch(serial_t *obj_in)
             // No more bytes to follow; check to see if we need to signal completion.
             if (obj->tx_events & SERIAL_EVENT_TX_COMPLETE) {
                 // Disable FIFO interrupt as there are no more bytes to follow.
-                Cy_SCB_SetTxInterruptMask(obj->base, CY_SCB_UART_TX_DONE);
+                Cy_SCB_SetRxInterruptMask(obj->base, CY_SCB_UART_TX_DONE);
             } else {
                 // Nothing more to do, mark end of transmission.
                 serial_finish_tx_asynch(obj);
@@ -770,12 +770,13 @@ int serial_irq_handler_asynch(serial_t *obj_in)
     if (rx_status & CY_SCB_RX_INTR_LEVEL) {
         uint8_t *ptr = obj_in->rx_buff.buffer;
         ptr += obj_in->rx_buff.pos;
-        uint32_t fifo_cnt = Cy_SCB_UART_GetNumInRxFifo(obj->base);
-        while ((obj_in->rx_buff.pos < obj_in->rx_buff.length) && fifo_cnt) {
+        while (obj_in->rx_buff.pos < obj_in->rx_buff.length) {
             uint32_t c = Cy_SCB_UART_Get(obj->base);
+            if (c == CY_SCB_UART_RX_NO_DATA) {
+                break;
+            }
             *ptr++ = (uint8_t)c;
             ++(obj_in->rx_buff.pos);
-            --fifo_cnt;
             // Check for character match condition.
             if (obj_in->char_match != SERIAL_RESERVED_CHAR_MATCH) {
                 if (c == obj_in->char_match) {
@@ -787,13 +788,9 @@ int serial_irq_handler_asynch(serial_t *obj_in)
                 }
             }
         }
-        if (obj_in->rx_buff.pos == obj_in->rx_buff.length) {
-            cur_events |= SERIAL_EVENT_RX_COMPLETE & obj->rx_events;
-        }
     }
 
-    // Any event should end operation.
-    if (cur_events & SERIAL_EVENT_RX_ALL) {
+    if (obj_in->rx_buff.pos == obj_in->rx_buff.length) {
         serial_finish_rx_asynch(obj);
     }
 

@@ -3,7 +3,7 @@
 <!-- 
     Required
     Add here detailed changes summary, testing results, dependencies 
-    Good example: https://os.mbed.com/docs/mbed-os/latest/contributing/workflow.html (Pull request template)
+    Good example: https://os.mbed.com/docs/latest/reference/workflow.html (Pull request template)
 -->
 
 
@@ -23,11 +23,4 @@
     [ ] Docs update
     [ ] Test update
     [ ] Breaking change
-
-### Reviewers
-
-<!-- 
-    Optional
-    Request additional reviewers with @username
--->
 

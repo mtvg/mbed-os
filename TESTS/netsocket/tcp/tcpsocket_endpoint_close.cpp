@@ -26,7 +26,7 @@ using namespace utest::v1;
 
 namespace {
 static const int SIGNAL_SIGIO = 0x1;
-static const int SIGIO_TIMEOUT = 20000; //[ms]
+static const int SIGIO_TIMEOUT = 5000; //[ms]
 }
 
 static void _sigio_handler(osThreadId id)
@@ -38,10 +38,10 @@ static nsapi_error_t _tcpsocket_connect_to_daytime_srv(TCPSocket &sock)
 {
     SocketAddress tcp_addr;
 
-    NetworkInterface::get_default_instance()->gethostbyname(MBED_CONF_APP_ECHO_SERVER_ADDR, &tcp_addr);
+    get_interface()->gethostbyname(MBED_CONF_APP_ECHO_SERVER_ADDR, &tcp_addr);
     tcp_addr.set_port(13);
 
-    nsapi_error_t err = sock.open(NetworkInterface::get_default_instance());
+    nsapi_error_t err = sock.open(get_interface());
     if (err != NSAPI_ERROR_OK) {
         return err;
     }

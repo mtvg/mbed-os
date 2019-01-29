@@ -18,7 +18,7 @@
  *  @{
  *  \defgroup hal_qspi_tests Tests
  *  QSPI tests of the HAL.
- *  @{
+ *  @{ 
  */
 #ifndef MBED_QSPI_TEST_H
 #define MBED_QSPI_TEST_H
@@ -77,6 +77,7 @@ template <  qspi_bus_width_t write_inst_width,
             unsigned int write_cmd,
             qspi_address_size_t write_addr_size,
             qspi_alt_size_t write_alt_size,
+            int write_frequency,
             uint32_t write_count,
             qspi_bus_width_t read_inst_width,
             qspi_bus_width_t read_addr_width,
@@ -86,7 +87,7 @@ template <  qspi_bus_width_t write_inst_width,
             int read_dummy_cycles,
             qspi_address_size_t read_addr_size,
             qspi_alt_size_t read_alt_size,
-            int frequency,
+            int read_frequency,
             uint32_t read_count,
             uint32_t test_count,
             uint32_t data_size,

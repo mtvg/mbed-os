@@ -50,6 +50,8 @@ struct analogin_s {
 
 struct serial_s {
     UARTName uart;
+    PinName pin_tx;
+    PinName pin_rx;
     
     uint32_t baudrate;
     uint32_t databits;

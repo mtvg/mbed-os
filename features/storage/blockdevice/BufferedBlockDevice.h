@@ -19,52 +19,46 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-/** \addtogroup storage */
-/** @{*/
-
 #ifndef MBED_BUFFERED_BLOCK_DEVICE_H
 #define MBED_BUFFERED_BLOCK_DEVICE_H
 
 #include "BlockDevice.h"
 
-namespace mbed {
 
 /** Block device for allowing minimal read and program sizes (of 1) for the underlying BD,
  *  using a buffer on the heap.
  */
 class BufferedBlockDevice : public BlockDevice {
 public:
-    /** Lifetime of a memory-buffered block device wrapping an underlying block device
+    /** Lifetime of the memory block device
      *
      *  @param bd        Block device to back the BufferedBlockDevice
      */
     BufferedBlockDevice(BlockDevice *bd);
 
-    /** Lifetime of the memory-buffered block device
+    /** Lifetime of a block device
      */
     virtual ~BufferedBlockDevice();
 
-    /** Initialize a buffered-memory block device and its underlying block device
+    /** Initialize a block device
      *
      *  @return         0 on success or a negative error code on failure
      */
     virtual int init();
 
-    /** Deinitialize the buffered-memory block device and its underlying block device
+    /** Deinitialize a block device
      *
      *  @return         0 on success or a negative error code on failure
      */
     virtual int deinit();
 
-    /** Ensure that data on the underlying storage block device is in sync with the
-     *  memory-buffered block device
+    /** Ensure data on storage is in sync with the driver
      *
      *  @return         0 on success or a negative error code on failure
      */
     virtual int sync();
 
-    /** Read blocks from the memory-buffered block device
+    /** Read blocks from a block device
      *
      *  @param buffer   Buffer to read blocks into
      *  @param addr     Address of block to begin reading from
@@ -73,9 +67,9 @@ public:
      */
     virtual int read(void *buffer, bd_addr_t addr, bd_size_t size);
 
-    /** Program data to the memory-buffered block device
+    /** Program blocks to a block device
      *
-     *  The write address blocks must be erased prior to being programmed.
+     *  The blocks must have been erased prior to being programmed
      *
      *  @param buffer   Buffer of data to write to blocks
      *  @param addr     Address of block to begin writing to
@@ -84,10 +78,10 @@ public:
      */
     virtual int program(const void *buffer, bd_addr_t addr, bd_size_t size);
 
-    /** Erase blocks from the memory-buffered block device
+    /** Erase blocks on a block device
      *
      *  The state of an erased block is undefined until it has been programmed,
-     *  unless get_erase_value returns a non-negative byte value.
+     *  unless get_erase_value returns a non-negative byte value
      *
      *  @param addr     Address of block to begin erasing
      *  @param size     Size to erase in bytes, must be a multiple of erase block size
@@ -128,7 +122,7 @@ public:
      */
     virtual bd_size_t get_erase_size() const;
 
-    /** Get the size of an erasable block of a given address
+    /** Get the size of an erasable block given address
      *
      *  @param addr     Address within the erasable block
      *  @return         Size of an erasable block in bytes
@@ -136,7 +130,7 @@ public:
      */
     virtual bd_size_t get_erase_size(bd_addr_t addr) const;
 
-    /** Get the value of storage data after being erased
+    /** Get the value of storage when erased
      *
      *  If get_erase_value returns a non-negative byte value, the underlying
      *  storage is set to that value when erased, and storage containing
@@ -153,45 +147,22 @@ public:
      */
     virtual bd_size_t size() const;
 
-    /** Get the underlying BlockDevice class type
-     *
-     *  @return         A string representing the underlying BlockDevice class type
-     */
-    virtual const char *get_type() const;
-
 protected:
     BlockDevice *_bd;
     bd_size_t _bd_program_size;
-    bd_size_t _bd_read_size;
-    bd_size_t _bd_size;
-    bd_size_t _write_cache_addr;
-    bool _write_cache_valid;
-    uint8_t *_write_cache;
-    uint8_t *_read_buf;
+    bd_size_t _curr_aligned_addr;
+    bool _flushed;
+    uint8_t *_cache;
     uint32_t _init_ref_count;
     bool _is_initialized;
 
-#if !(DOXYGEN_ONLY)
     /** Flush data in cache
      *
      *  @return         0 on success or a negative error code on failure
      */
     int flush();
 
-    /** Invalidate write cache
-     *
-     *  @return         none
-     */
-    void invalidate_write_cache();
-#endif //#if !(DOXYGEN_ONLY)
 };
-} // namespace mbed
 
-// Added "using" for backwards compatibility
-#ifndef MBED_NO_GLOBAL_USING_DIRECTIVE
-using mbed::BufferedBlockDevice;
-#endif
 
 #endif
-
-/** @}*/

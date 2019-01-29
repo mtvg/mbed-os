@@ -226,7 +226,7 @@ ble_error_t GenericSecurityManager::purgeAllBondingState(void) {
     return BLE_ERROR_NONE;
 }
 
-ble_error_t GenericSecurityManager::generateWhitelistFromBondTable(::Gap::Whitelist_t *whitelist) const {
+ble_error_t GenericSecurityManager::generateWhitelistFromBondTable(Gap::Whitelist_t *whitelist) const {
     if (!_db) return BLE_ERROR_INITIALIZATION_INCOMPLETE;
     if (eventHandler) {
         if (!whitelist) {
@@ -744,20 +744,14 @@ ble_error_t GenericSecurityManager::generateOOB(
     /* Secure connections. Avoid generating if we're already waiting for it.
      * If a local random is set to 0 it means we're already calculating. */
     if (!is_all_zeros(_oob_local_random)) {
-        /* save the current values in case the call to
-         * generate_secure_connections_oob fails */
-        address_t orig_local_address = _oob_local_address;
-        oob_lesc_value_t orig_local_random = _oob_local_random;
-
-        _oob_local_address = *address;
-        /* this will be updated when calculation completes,
-         * a value of all zeros is an invalid random value */
-        set_all_zeros(_oob_local_random);
-
         status = _pal.generate_secure_connections_oob();
-        if (status != BLE_ERROR_NONE && status != BLE_ERROR_NOT_IMPLEMENTED) {
-            _oob_local_address = orig_local_address;
-            _oob_local_random = orig_local_random;
+
+        if (status == BLE_ERROR_NONE) {
+            _oob_local_address = *address;
+            /* this will be updated when calculation completes,
+             * a value of all zeros is an invalid random value */
+            set_all_zeros(_oob_local_random);
+        } else if (status != BLE_ERROR_NOT_IMPLEMENTED) {
             return status;
         }
     } else {
@@ -1156,12 +1150,12 @@ void GenericSecurityManager::set_mitm_performed(connection_handle_t connection, 
 
 void GenericSecurityManager::on_connected(
     connection_handle_t connection,
-    ::Gap::Role_t role,
+    Gap::Role_t role,
     peer_address_type_t peer_address_type,
     const BLEProtocol::AddressBytes_t peer_address,
     BLEProtocol::AddressType_t local_address_type,
     const BLEProtocol::AddressBytes_t local_address,
-    const ::Gap::ConnectionParams_t *connection_params
+    const Gap::ConnectionParams_t *connection_params
 ) {
     MBED_ASSERT(_db);
     ControlBlock_t *cb = acquire_control_block(connection);
@@ -1171,7 +1165,7 @@ void GenericSecurityManager::on_connected(
 
     // setup the control block
     cb->local_address = local_address;
-    cb->is_master = (role == ::Gap::CENTRAL);
+    cb->is_master = (role == Gap::CENTRAL);
 
     // get the associated db handle and the distribution flags if any
     cb->db_entry = _db->open_entry(peer_address_type, peer_address);
@@ -1197,7 +1191,7 @@ void GenericSecurityManager::on_connected(
 
 void GenericSecurityManager::on_disconnected(
     connection_handle_t connection,
-    ::Gap::DisconnectionReason_t reason
+    Gap::DisconnectionReason_t reason
 ) {
     MBED_ASSERT(_db);
     ControlBlock_t *cb = get_control_block(connection);
@@ -1223,8 +1217,8 @@ void GenericSecurityManager::on_security_entry_retrieved(
 
     _pal.add_device_to_resolving_list(
         identity->identity_address_is_public ?
-            address_type_t::PUBLIC :
-            address_type_t::RANDOM,
+            address_type_t::PUBLIC_ADDRESS :
+            address_type_t::RANDOM_ADDRESS,
         identity->identity_address,
         identity->irk
     );
@@ -1240,8 +1234,8 @@ void GenericSecurityManager::on_identity_list_retrieved(
     for (size_t i = 0; i < count; ++i) {
         _pal.add_device_to_resolving_list(
             identity_list[i].identity_address_is_public ?
-                address_type_t::PUBLIC :
-                address_type_t::RANDOM,
+                address_type_t::PUBLIC_ADDRESS :
+                address_type_t::RANDOM_ADDRESS,
             identity_list[i].identity_address,
             identity_list[i].irk
         );
@@ -1699,7 +1693,7 @@ void GenericSecurityManager::on_keys_distributed_bdaddr(
 
     _db->set_entry_peer_bdaddr(
         cb->db_entry,
-        (peer_address_type == advertising_peer_address_type_t::PUBLIC),
+        (peer_address_type == advertising_peer_address_type_t::PUBLIC_ADDRESS),
         peer_identity_address
     );
 }

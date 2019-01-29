@@ -17,7 +17,6 @@
 #include "mbed.h"
 #include "us_ticker_api.h"
 #include "BLE.h"
-#include "CriticalSectionLock.h"
 #include "wsf_types.h"
 #include "wsf_msg.h"
 #include "wsf_os.h"
@@ -48,8 +47,7 @@ wsfHandlerId_t stack_handler_id;
  */
 MBED_WEAK ble::vendor::cordio::CordioHCIDriver& ble_cordio_get_hci_driver()
 {
-    MBED_ASSERT("No HCI driver");
-    printf("Please provide an implementation for the HCI driver");
+    error("Please provide an implementation for the HCI driver");
     ble::vendor::cordio::CordioHCIDriver* bad_instance = NULL;
     return *bad_instance;
 }
@@ -97,8 +95,7 @@ namespace cordio {
 BLE::BLE(CordioHCIDriver& hci_driver) :
     initialization_status(NOT_INITIALIZED),
     instanceID(::BLE::DEFAULT_INSTANCE),
-    _event_queue(),
-    _last_update_us(0)
+    _event_queue()
 {
     _hci_driver = &hci_driver;
     stack_setup();
@@ -123,8 +120,6 @@ ble_error_t BLE::init(
 {
     switch (initialization_status) {
         case NOT_INITIALIZED:
-            _timer.reset();
-            _timer.start();
             _event_queue.initialize(this, instanceID);
             _init_callback = initCallback;
             start_stack_reset();
@@ -264,15 +259,6 @@ void BLE::processEvents()
                 ::BLE::Instance(::BLE::DEFAULT_INSTANCE),
                 BLE_ERROR_NONE
             };
-
-            // initialize extended module if supported
-            if (HciGetLeSupFeat() & HCI_LE_SUP_FEAT_LE_EXT_ADV) {
-                DmExtAdvInit();
-                DmExtScanInit();
-                DmExtConnMasterInit();
-                DmExtConnSlaveInit();
-            }
-
             deviceInstance().getGattServer().initialize();
             deviceInstance().initialization_status = INITIALIZED;
             _init_callback.call(&context);
@@ -331,14 +317,7 @@ void BLE::stack_setup()
         buf_pool_desc.pool_count, buf_pool_desc.pool_description
     );
 
-    // Raise assert if not enough memory was allocated
     MBED_ASSERT(bytes_used != 0);
-
-    // This warning will be raised if we've allocated too much memory
-    if(bytes_used < buf_pool_desc.buffer_size)
-    {
-        MBED_WARNING1(MBED_MAKE_ERROR(MBED_MODULE_BLE, MBED_ERROR_CODE_INVALID_SIZE), "Too much memory allocated for Cordio memory pool, reduce buf_pool_desc.buffer_size by value below.", buf_pool_desc.buffer_size - bytes_used);
-    }
 
     WsfTimerInit();
     SecInit();
@@ -409,24 +388,22 @@ void BLE::callDispatcher()
     // process the external event queue
     _event_queue.process();
 
-    _last_update_us += (uint64_t)_timer.read_high_resolution_us();
-    _timer.reset();
+    // follow by stack events
+    static uint32_t lastTimeUs = us_ticker_read();
+    uint32_t currTimeUs, deltaTimeMs;
 
-    uint64_t last_update_ms   = (_last_update_us / 1000);
-    wsfTimerTicks_t wsf_ticks = (last_update_ms / WSF_MS_PER_TICK);
-
-    if (wsf_ticks > 0) {
-        WsfTimerUpdate(wsf_ticks);
-
-        _last_update_us -= (last_update_ms * 1000);
+    // Update the current cordio time
+    currTimeUs = us_ticker_read();
+    deltaTimeMs = (currTimeUs - lastTimeUs) / 1000;
+    if (deltaTimeMs > 0) {
+        WsfTimerUpdate(deltaTimeMs / WSF_MS_PER_TICK);
+        lastTimeUs += deltaTimeMs * 1000;
     }
 
     wsfOsDispatcher();
 
-    static Timeout nextTimeout;
-    CriticalSectionLock critical_section;
-
     if (wsfOsReadyToSleep()) {
+        static Timeout nextTimeout;
         // setup an mbed timer for the next Cordio timeout
         bool_t pTimerRunning;
         timestamp_t nextTimestamp = (timestamp_t) (WsfTimerNextExpiration(&pTimerRunning) * WSF_MS_PER_TICK) * 1000;

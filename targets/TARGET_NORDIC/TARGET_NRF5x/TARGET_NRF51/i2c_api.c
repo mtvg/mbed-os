@@ -39,7 +39,7 @@
 
 #include "i2c_api.h"
 
-#if DEVICE_I2C && DEVICE_LPTICKER
+#if (defined(DEVICE_I2C) && defined(DEVICE_LPTICKER))
 
 #include "mbed_assert.h"
 #include "mbed_error.h"

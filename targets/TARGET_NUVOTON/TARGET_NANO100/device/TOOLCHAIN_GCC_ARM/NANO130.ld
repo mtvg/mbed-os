@@ -2,11 +2,7 @@
  * Nuvoton NANO130 GCC linker script file
  */
 
-#if !defined(MBED_BOOT_STACK_SIZE)
-  #define MBED_BOOT_STACK_SIZE      0x400
-#endif
-
-StackSize = MBED_BOOT_STACK_SIZE;
+StackSize = 0x600;
 
 MEMORY
 {

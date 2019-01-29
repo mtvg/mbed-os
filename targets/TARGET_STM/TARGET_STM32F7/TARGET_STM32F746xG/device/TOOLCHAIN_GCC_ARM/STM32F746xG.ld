@@ -1,11 +1,5 @@
 /* Linker script to configure memory regions. */
 
-#if !defined(MBED_BOOT_STACK_SIZE)
-    #define MBED_BOOT_STACK_SIZE 0x400
-#endif
-
-STACK_SIZE = MBED_BOOT_STACK_SIZE;
-
 #if !defined(MBED_APP_START)
   #define MBED_APP_START 0x08000000
 #endif
@@ -13,8 +7,6 @@ STACK_SIZE = MBED_BOOT_STACK_SIZE;
 #if !defined(MBED_APP_SIZE)
   #define MBED_APP_SIZE 1024K
 #endif
-
-M_CRASH_DATA_RAM_SIZE = 0x100;
 
 MEMORY
 { 
@@ -94,18 +86,6 @@ SECTIONS
     __etext = .;
     _sidata = .;
 
-    .crash_data_ram :
-    {
-        . = ALIGN(8);
-        __CRASH_DATA_RAM__ = .;
-        __CRASH_DATA_RAM_START__ = .; /* Create a global symbol at data start */
-        KEEP(*(.keep.crash_data_ram))
-        *(.m_crash_data_ram)     /* This is a user defined section */
-        . += M_CRASH_DATA_RAM_SIZE;
-        . = ALIGN(8);
-        __CRASH_DATA_RAM_END__ = .; /* Define a global symbol at data end */
-    } > RAM
-
     .data : AT (__etext)
     {
         __data_start__ = .;
@@ -174,7 +154,7 @@ SECTIONS
      * size of stack_dummy section */
     __StackTop = ORIGIN(RAM) + LENGTH(RAM);
     _estack = __StackTop;
-    __StackLimit = __StackTop - STACK_SIZE;
+    __StackLimit = __StackTop - SIZEOF(.stack_dummy);
     PROVIDE(__stack = __StackTop);
 
     /* Check if data + heap + stack exceeds RAM limit */

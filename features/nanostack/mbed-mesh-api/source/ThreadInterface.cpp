@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2018 ARM Limited. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- * Licensed under the Apache License, Version 2.0 (the License); you may
- * not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an AS IS BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 #include "ThreadInterface.h"
 #include "include/thread_tasklet.h"
 #include "callback_handler.h"
@@ -23,7 +7,8 @@
 #include "ns_trace.h"
 #define TRACE_GROUP "nsth"
 
-class Nanostack::ThreadInterface : public Nanostack::MeshInterface {
+class Nanostack::ThreadInterface : public Nanostack::MeshInterface
+{
 public:
     virtual nsapi_error_t bringup(bool dhcp, const char *ip,
                                   const char *netmask, const char *gw,
@@ -88,7 +73,7 @@ private:
 
 Nanostack::ThreadInterface *ThreadInterface::get_interface() const
 {
-    return static_cast<Nanostack::ThreadInterface *>(_interface);
+    return static_cast<Nanostack::ThreadInterface*>(_interface);
 }
 
 nsapi_error_t ThreadInterface::do_initialize()
@@ -269,22 +254,10 @@ mesh_error_t Nanostack::ThreadInterface::device_pskd_set(const char *pskd)
 
 #define THREAD 0x2345
 #if MBED_CONF_NSAPI_DEFAULT_MESH_TYPE == THREAD && DEVICE_802_15_4_PHY
-
 MBED_WEAK MeshInterface *MeshInterface::get_target_default_instance()
 {
-    static bool inited;
-    static ThreadInterface interface;
-    singleton_lock();
-    if (!inited) {
-        nsapi_error_t result = interface.initialize(&NanostackRfPhy::get_default_instance());
-        if (result != 0) {
-            tr_error("Thread initialize failed: %d", result);
-            singleton_unlock();
-            return NULL;
-        }
-        inited = true;
-    }
-    singleton_unlock();
-    return &interface;
+    static ThreadInterface thread(&NanostackRfPhy::get_default_instance());
+
+    return &thread;
 }
 #endif

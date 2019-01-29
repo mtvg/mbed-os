@@ -19,7 +19,7 @@
  * @{
  * @defgroup hal_sleep_test_util Tests
  * Tests of the sleep HAL.
- * @{
+ * @{     
  */
 
 #ifndef MBED_SLEEP_TEST_UTILS_H
@@ -105,7 +105,7 @@ void us_ticker_isr(const ticker_data_t *const ticker_data)
     us_ticker_clear_interrupt();
 }
 
-#if DEVICE_LPTICKER
+#ifdef DEVICE_LPTICKER
 void lp_ticker_isr(const ticker_data_t *const ticker_data)
 {
     lp_ticker_clear_interrupt();

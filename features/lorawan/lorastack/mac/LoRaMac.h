@@ -696,8 +696,6 @@ private:
     device_class_t _device_class;
 
     uint8_t _prev_qos_level;
-
-    bool _demod_ongoing;
 };
 
 #endif // MBED_LORAWAN_MAC_H__

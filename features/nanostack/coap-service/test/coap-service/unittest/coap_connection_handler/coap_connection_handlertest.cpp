@@ -19,10 +19,12 @@
 
 TEST_GROUP(coap_connection_handler)
 {
-    void setup() {
+    void setup()
+    {
     }
 
-    void teardown() {
+    void teardown()
+    {
     }
 };
 

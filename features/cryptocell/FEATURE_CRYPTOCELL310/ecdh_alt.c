@@ -27,9 +27,14 @@
 #include "crys_ecpki_domain.h"
 #include "crys_ec_mont_api.h"
 #include "mbedtls/platform.h"
-#include "mbedtls/platform_util.h"
 #include "cc_internal.h"
 
+
+/* Implementation that should never be optimized out by the compiler */
+static void mbedtls_zeroize( void *v, size_t n ) {
+    volatile unsigned char *p = (unsigned char*)v;
+    while( n-- ) *p++ = 0;
+}
 
 #if defined (MBEDTLS_ECDH_GEN_PUBLIC_ALT)
 int mbedtls_ecdh_gen_public( mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_point *Q,
@@ -79,12 +84,12 @@ int mbedtls_ecdh_gen_public( mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp
                                                             4*((((grp->nbits+7)/8)+3)/4) ) );
           if( ret != 0 )
           {
-              mbedtls_platform_zeroize( temp_buf, sizeof( temp_buf ) );
+              mbedtls_zeroize( temp_buf, sizeof( temp_buf ) );
               goto cleanup;
           }
 
           MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary( d, temp_buf, (grp->nbits+7)/8 ) );
-          mbedtls_platform_zeroize( temp_buf, sizeof( temp_buf ) );
+          mbedtls_zeroize( temp_buf, sizeof( temp_buf ) );
       }
 
       /* if CRYS_ECPKI_GetEcDomain returns NULL, then the given curve is either Montgomery 25519
@@ -113,13 +118,13 @@ int mbedtls_ecdh_gen_public( mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp
           MBEDTLS_MPI_CHK( mbedtls_mpi_lset( &Q->Z, 1 ) );
       }
       else
-          ret =  MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED;
+          ret =  MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
 
 cleanup:
 
     if ( pHeap )
     {
-        mbedtls_platform_zeroize( pHeap, heapSize );
+        mbedtls_zeroize( pHeap, heapSize );
         mbedtls_free( pHeap );
     }
 
@@ -185,7 +190,7 @@ int mbedtls_ecdh_compute_shared( mbedtls_ecp_group *grp, mbedtls_mpi *z,
                                                                          temp_buf,
                                                                          mbedtls_mpi_size( d ),
                                                                          &ecdhParams->privKey ) );
-        mbedtls_platform_zeroize( temp_buf, sizeof( temp_buf ) );
+        mbedtls_zeroize( temp_buf, sizeof( temp_buf ) );
         if ( ret != 0 )
         {
             goto cleanup;
@@ -226,7 +231,7 @@ int mbedtls_ecdh_compute_shared( mbedtls_ecp_group *grp, mbedtls_mpi *z,
     }
     else
     {
-        ret =  MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED;
+        ret =  MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
         goto cleanup;
     }
 
@@ -236,13 +241,13 @@ cleanup:
 
     if ( pHeap )
     {
-        mbedtls_platform_zeroize( pHeap, heapSize );
+        mbedtls_zeroize( pHeap, heapSize );
         mbedtls_free ( pHeap );
     }
 
     if ( secret )
     {
-        mbedtls_platform_zeroize( secret, secret_size_in_heap );
+        mbedtls_zeroize( secret, secret_size_in_heap );
         mbedtls_free ( secret );
     }
 

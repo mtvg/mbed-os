@@ -47,7 +47,6 @@
 #include "thread_config.h"
 #include "thread_tmfcop_lib.h"
 #include "thread_management_if.h"
-#include "thread_management_server.h"
 #include "thread_commissioning_if.h"
 
 
@@ -171,9 +170,9 @@ int thread_resolution_server_init(int8_t interface_id, thread_resolution_server_
     }
 
     this->interface_id = interface_id;
-    this->coap_service_id = thread_management_server_service_id_get(interface_id);
+    this->coap_service_id = coap_service_initialize(this->interface_id, THREAD_MANAGEMENT_PORT, COAP_SERVICE_OPTIONS_NONE, NULL, NULL);
     if (this->coap_service_id < 0) {
-        tr_warn("Thread resolution srv init failed");
+        tr_warn("Thread resolution init failed");
         ns_dyn_mem_free(this);
         return -3;
     }
@@ -194,6 +193,7 @@ void thread_resolution_server_delete(int8_t interface_id)
 
     coap_service_unregister_uri(this->coap_service_id, THREAD_URI_ADDRESS_QUERY_REQUEST);
 
+    coap_service_delete(this->coap_service_id);
     ns_list_remove(&instance_list, this);
     ns_dyn_mem_free(this);
 }

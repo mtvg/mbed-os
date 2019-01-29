@@ -21,7 +21,6 @@
 #include "UDPSocket.h"
 #include "unity/unity.h"
 #include "utest.h"
-#include "SocketStats.h"
 
 using namespace utest::v1;
 
@@ -47,7 +46,7 @@ void UDPSOCKET_OPEN_LIMIT()
             if (!sock) {
                 break;
             }
-            ret = sock->open(NetworkInterface::get_default_instance());
+            ret = sock->open(get_interface());
             if (ret == NSAPI_ERROR_NO_MEMORY || ret == NSAPI_ERROR_NO_SOCKET) {
                 printf("[round#%02d] unable to open new socket, error: %d\n", i, ret);
                 delete sock;
@@ -70,16 +69,7 @@ void UDPSOCKET_OPEN_LIMIT()
         if (!socket_list_head) {
             break;
         }
-#if MBED_CONF_NSAPI_SOCKET_STATS_ENABLE
-        int count = fetch_stats();
-        int open_count = 0;
-        for (int j = 0; j < count; j++) {
-            if ((udp_stats[j].state == SOCK_OPEN) && (udp_stats[j].proto == NSAPI_UDP)) {
-                open_count++;
-            }
-        }
-        TEST_ASSERT(open_count >= 3);
-#endif
+
         UDPSocketItem *tmp;
         for (UDPSocketItem *it = socket_list_head; it;) {
             ++open_sockets[i];

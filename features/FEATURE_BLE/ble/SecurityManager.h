@@ -19,7 +19,7 @@
 
 #include <stdint.h>
 
-#include "ble/Gap.h"
+#include "Gap.h"
 #include "CallChainOfFunctionPointersWithContext.h"
 #include "ble/BLETypes.h"
 

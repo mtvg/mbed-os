@@ -18,7 +18,7 @@
  *
  */
 
-#if DEVICE_TRNG
+#if defined(DEVICE_TRNG)
 
 #include <stdlib.h>
 #include "cmsis.h"
@@ -37,19 +37,13 @@ void trng_init(trng_t *obj)
         error("Only 1 RNG instance supported\r\n");
     }
 
-#if defined(RCC_PERIPHCLK_RNG)
+#if defined(TARGET_STM32L4)
     RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
 
     /*Select PLLQ output as RNG clock source */
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_RNG;
-#if ((CLOCK_SOURCE) & USE_PLL_MSI)
-    PeriphClkInitStruct.RngClockSelection = RCC_RNGCLKSOURCE_MSI;
-#else
     PeriphClkInitStruct.RngClockSelection = RCC_RNGCLKSOURCE_PLL;
-#endif
-    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
-        error("RNG clock configuration error\n");
-    }
+    HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
 #endif
 
     /* RNG Peripheral clock enable */

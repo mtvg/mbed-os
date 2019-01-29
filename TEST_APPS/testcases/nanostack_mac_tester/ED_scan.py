@@ -18,13 +18,12 @@ limitations under the License.
 import threading
 import os,sys
 from icetea_lib.bench import Bench
-from icetea_lib.TestStepError import TestStepFail
 
 class Testcase(Bench):
     def __init__(self):
         Bench.__init__(self, name = "ED_scan",
                         title = "ED scan test",
-                        status = "released",
+                        status = "development",
                         type = "smoke",
                         subtype = "",
                         execution = {
@@ -42,7 +41,7 @@ class Testcase(Bench):
                                 '*': {
                                     "count":3,
                                     "type": "hardware",
-                                    "allowed_platforms": ["K64F", "K66F", "NUCLEO_F429ZI", "KW24D", "UBLOX_EVK_ODIN_W2", "KW41Z"],
+                                    "allowed_platforms": ["K64F", "K66F", "NUCLEO_F429ZI", "KW24D", "UBLOX_EVK_ODIN_W2"],
                                     "application": {
                                        "name": "TEST_APPS-device-nanostack_mac_tester"
                                     }
@@ -55,6 +54,9 @@ class Testcase(Bench):
 
     def setUp(self):
         self.channel = 11
+        self.command("First", "addr --64-bit 01:02:03:00:00:00:00:01")
+        self.command("Second", "addr --64-bit 01:02:03:00:00:00:00:02")
+        self.command("Third", "addr --64-bit 01:02:03:00:00:00:00:03")
 
     def spam_channel(self, event):
         while not event.wait(0.1):
@@ -69,21 +71,11 @@ class Testcase(Bench):
             res = res | ( 1 << ch)
         return hex(res)
 
-    def do_test_iteration(self):
+    def case(self):
         self.lock_th = threading.Lock()
-        self.command("First", "mlme-reset")
-        self.command("Second", "mlme-reset")
-        self.command("Third", "mlme-reset")
-
-        self.command("First", "addr --64-bit 01:02:03:00:00:00:00:01")
-        self.command("Second", "addr --64-bit 01:02:03:00:00:00:00:02")
-        self.command("Third", "addr --64-bit 01:02:03:00:00:00:00:03")
-
         self.payload = "01234567890123456789012345678901234567890123456789"
 
-        # Start PAN coordinator
         self.command("First", "start --pan_coordinator true --logical_channel {}".format(self.channel))
-        # Start PAN beacon
         self.command("Second", "start --pan_coordinator false --logical_channel {}".format(self.channel))
         self.command("Third", "start --pan_coordinator false --logical_channel {}".format(self.channel))
 
@@ -98,36 +90,13 @@ class Testcase(Bench):
         channels = range(11,27)
         for i in range(0, 3):
             self.lock_th.acquire()
-            # Reset MAC settings
             self.command("First", "mlme-reset")
-            # Start PAN coordinator
             self.command("First", "start --pan_coordinator true --logical_channel {}".format(self.channel))
             self.command("Third", "mlme-reset")
-            # Start PAN beacon
             self.command("Third", "start --pan_coordinator false --logical_channel {}".format(self.channel))
             self.lock_th.release()
-            # Scan all channels
             self.command("Second", "scan --scan_type 0 --scan_duration 7 --channel_mask {}".format(self.mask_from_channel_list(channels)))
-            # Energy detection analysis
             self.command("Second", "analyze-ed --channel {} --above 100".format(self.channel))
-
-    def case(self):
-        # Try tests few times because of potential RF failures
-        loop = 0
-        while loop < 5:
-            try:
-                self.do_test_iteration()
-                break
-            except TestStepFail:
-                self.logger.info("Warning, iteration failed #"  + str(loop+1))
-                loop = loop + 1
-                if (loop < 5):
-                    self.stop_event.set()
-                    self.th.join()
-                    self.delay(5)
-
-        else:
-             raise TestStepFail("Too many failed iterations!")
 
     def tearDown(self):
         self.command("First", "silent-mode off")
@@ -136,4 +105,3 @@ class Testcase(Bench):
         self.th.join()
         del self.th
         self.reset_dut()
-

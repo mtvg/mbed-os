@@ -14,14 +14,9 @@
  * limitations under the License.
  */
 
-/** @file DNS.h Domain Name Service */
-/** @addtogroup netsocket
- * @{ */
-
 #ifndef DNS_H
 #define DNS_H
 
-/** Base class for DNS provider */
 class DNS {
 public:
 
@@ -100,5 +95,3 @@ public:
 };
 
 #endif
-
-/** @} */

@@ -19,7 +19,7 @@ from __future__ import print_function, division, absolute_import
 import re
 import sys
 import json
-from os import stat, walk, getcwd, sep, remove, getenv, rename, remove
+from os import stat, walk, getcwd, sep, remove, getenv
 from copy import copy
 from time import time, sleep
 from shutil import copyfile
@@ -40,8 +40,7 @@ from .. import hooks
 from ..notifier.term import TerminalNotifier
 from ..resources import FileType
 from ..memap import MemapParser
-from ..config import (ConfigException, RAM_ALL_MEMORIES, ROM_ALL_MEMORIES)
-from ..settings import COMPARE_FIXED
+from ..config import ConfigException
 
 
 #Disables multiprocessing if set to higher number than the host machine CPUs
@@ -78,8 +77,6 @@ class mbedToolchain:
         "Cortex-M33": ["__CORTEX_M33", "ARM_MATH_ARMV8MML", "__CMSIS_RTOS", "__MBED_CMSIS_RTOS_CM"],
         "Cortex-M33F-NS": ["__CORTEX_M33", "ARM_MATH_ARMV8MML", "DOMAIN_NS=1", "__FPU_PRESENT=1U", "__CMSIS_RTOS", "__MBED_CMSIS_RTOS_CM"],
         "Cortex-M33F": ["__CORTEX_M33", "ARM_MATH_ARMV8MML", "__FPU_PRESENT=1U", "__CMSIS_RTOS", "__MBED_CMSIS_RTOS_CM"],
-        "Cortex-M33FD-NS": ["__CORTEX_M33", "ARM_MATH_ARMV8MML", "DOMAIN_NS=1", "__FPU_PRESENT=1U", "__CMSIS_RTOS", "__MBED_CMSIS_RTOS_CM", "__DSP_PRESENT=1U"],
-        "Cortex-M33FD": ["__CORTEX_M33", "ARM_MATH_ARMV8MML", "__FPU_PRESENT=1U", "__CMSIS_RTOS", "__MBED_CMSIS_RTOS_CM", "__DSP_PRESENT=1U"],
     }
 
     MBED_CONFIG_FILE_NAME="mbed_config.h"
@@ -201,8 +198,6 @@ class mbedToolchain:
                 if MBED_ORG_USER:
                     self.cxx_symbols.append('MBED_USERNAME=' + MBED_ORG_USER)
 
-                # Add target's name
-                self.cxx_symbols += ["TARGET_NAME=" + self.target.name]
                 # Add target's symbols
                 self.cxx_symbols += self.target.macros
                 # Add target's hardware
@@ -336,7 +331,7 @@ class mbedToolchain:
         """Generate a via file for all includes.
         ARM, GCC, IAR cross compatible
         """
-        cmd_list = ("\"-I{}\"".format(c.replace("\\", "/")) for c in includes if c)
+        cmd_list = ("-I{}".format(c.replace("\\", "/")) for c in includes if c)
         if self.CHROOT:
             cmd_list = (c.replace(self.CHROOT, '') for c in cmd_list)
         return self.make_option_file(list(cmd_list), naming=".includes_{}.txt")
@@ -622,7 +617,7 @@ class mbedToolchain:
         full_path = join(tmp_path, filename)
         elf = join(tmp_path, name + '.elf')
         bin = None if ext == 'elf' else full_path
-        mapfile = join(tmp_path, name + '.map')
+        map = join(tmp_path, name + '.map')
 
         objects = sorted(set(r.get_file_paths(FileType.OBJECT)))
         config_file = ([self.config.app_config_location]
@@ -639,11 +634,6 @@ class mbedToolchain:
         dependencies = objects + libraries + [linker_script] + config_file + hex_files
         dependencies.append(join(self.build_dir, self.PROFILE_FILE_NAME + "-ld"))
         if self.need_update(elf, dependencies):
-            if not COMPARE_FIXED and exists(mapfile):
-                old_mapfile = "%s.old" % mapfile
-                if exists(old_mapfile):
-                    remove(old_mapfile)
-                rename(mapfile, old_mapfile)
             needed_update = True
             self.progress("link", name)
             self.link(elf, objects, libraries, lib_dirs, linker_script)
@@ -654,7 +644,7 @@ class mbedToolchain:
             self.binary(r, elf, bin)
 
         # Initialize memap and process map file. This doesn't generate output.
-        self.mem_stats(mapfile)
+        self.mem_stats(map)
 
         self.notify.var("compile_succeded", True)
         self.notify.var("binary", filename)
@@ -709,18 +699,13 @@ class mbedToolchain:
 
         return None
 
-    def _add_defines_from_region(self, region, linker_define=False, suffixes=['_ADDR', '_SIZE']):
+    def _add_defines_from_region(self, region, suffixes=['_ADDR', '_SIZE']):
         for define in [(region.name.upper() + suffixes[0], region.start),
                        (region.name.upper() + suffixes[1], region.size)]:
             define_string = "-D%s=0x%x" %  define
             self.cc.append(define_string)
             self.cppc.append(define_string)
             self.flags["common"].append(define_string)
-            if linker_define:
-                ld_string = ("%s" % define[0], "0x%x" % define[1])
-                ld_string = self.make_ld_define(*ld_string)
-                self.ld.append(ld_string)
-                self.flags["ld"].append(ld_string)
 
     def _add_all_regions(self, region_list, active_region_name):
         for region in region_list:
@@ -740,55 +725,26 @@ class mbedToolchain:
         """Add regions to the build profile, if there are any.
         """
         if self.config.has_regions:
-            try:
-                regions = list(self.config.regions)
-                self.notify.info("Using ROM region%s %s in this build." % (
-                    "s" if len(regions) > 1 else "",
-                    ", ".join(r.name for r in regions)
-                ))
-                self._add_all_regions(regions, "MBED_APP")
-            except ConfigException:
-                pass
-
+            regions = list(self.config.regions)
+            self.notify.info("Using ROM region%s %s in this build." % (
+                "s" if len(regions) > 1 else "",
+                ", ".join(r.name for r in regions)
+            ))
+            self._add_all_regions(regions, "MBED_APP")
         if self.config.has_ram_regions:
-            try:
-                regions = list(self.config.ram_regions)
-                self.notify.info("Using RAM region%s %s in this build." % (
-                    "s" if len(regions) > 1 else "",
-                    ", ".join(r.name for r in regions)
-                ))
-                self._add_all_regions(regions, "MBED_RAM")
-            except ConfigException:
-                pass
-
-        Region = namedtuple("Region", "name start size")
-
+            regions = list(self.config.ram_regions)
+            self.notify.info("Using RAM region%s %s in this build." % (
+                "s" if len(regions) > 1 else "",
+                ", ".join(r.name for r in regions)
+            ))
+            self._add_all_regions(regions, "MBED_RAM")
         try:
-            # Add all available ROM regions to build profile
-            if not getattr(self.target, "static_memory_defines", False):
-                raise ConfigException()
-            rom_available_regions = self.config.get_all_active_memories(ROM_ALL_MEMORIES)
-            for key, value in rom_available_regions.items():
-                rom_start, rom_size = value
-                self._add_defines_from_region(
-                    Region("MBED_" + key, rom_start, rom_size),
-                    True,
-                    suffixes=["_START", "_SIZE"]
-                )
-        except ConfigException:
-            pass
-        try:
-            # Add all available RAM regions to build profile
-            if not getattr(self.target, "static_memory_defines", False):
-                raise ConfigException()
-            ram_available_regions = self.config.get_all_active_memories(RAM_ALL_MEMORIES)
-            for key, value in ram_available_regions.items():
-                ram_start, ram_size = value
-                self._add_defines_from_region(
-                    Region("MBED_" + key, ram_start, ram_size),
-                    True,
-                    suffixes=["_START", "_SIZE"]
-                )
+            rom_start, rom_size = self.config.rom
+            Region = namedtuple("Region", "name start size")
+            self._add_defines_from_region(
+                Region("MBED_ROM", rom_start, rom_size),
+                suffixes=["_START", "_SIZE"]
+            )
         except ConfigException:
             pass
 
@@ -798,27 +754,6 @@ class mbedToolchain:
 
         if stack_param in params:
             define_string = self.make_ld_define("MBED_BOOT_STACK_SIZE", int(params[stack_param].value, 0))
-            self.ld.append(define_string)
-            self.flags["ld"].append(define_string)
-
-        flags2params = {}
-        if self.target.is_PSA_non_secure_target:
-            flags2params = {
-                "MBED_ROM_START": "target.non-secure-rom-start",
-                "MBED_ROM_SIZE": "target.non-secure-rom-size",
-                "MBED_RAM_START": "target.non-secure-ram-start",
-                "MBED_RAM_SIZE": "target.non-secure-ram-size"
-            }
-        if self.target.is_PSA_secure_target:
-            flags2params = {
-                "MBED_ROM_START": "target.secure-rom-start",
-                "MBED_ROM_SIZE": "target.secure-rom-size",
-                "MBED_RAM_START": "target.secure-ram-start",
-                "MBED_RAM_SIZE": "target.secure-ram-size"
-            }
-
-        for flag, param in flags2params.items():
-            define_string = self.make_ld_define(flag, params[param].value)
             self.ld.append(define_string)
             self.flags["ld"].append(define_string)
 

@@ -17,7 +17,7 @@
 #ifndef MBED_GATT_CLIENT_H__
 #define MBED_GATT_CLIENT_H__
 
-#include "ble/Gap.h"
+#include "Gap.h"
 #include "GattAttribute.h"
 #include "ServiceDiscovery.h"
 #include "CharacteristicDescriptorDiscovery.h"

@@ -19,8 +19,6 @@
 
 #include <inttypes.h>
 
-using namespace mbed;
-
 /* constants */
 #define DATAFLASH_READ_SIZE        1
 #define DATAFLASH_PROG_SIZE        1
@@ -525,11 +523,6 @@ bd_size_t DataFlashBlockDevice::size() const
     bd_size_t device_size = _device_size;
     _mutex.unlock();
     return device_size;
-}
-
-const char *DataFlashBlockDevice::get_type() const
-{
-    return "DATAFLASH";
 }
 
 /**

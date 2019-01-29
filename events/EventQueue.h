@@ -1,6 +1,5 @@
 /* events
  * Copyright (c) 2016 ARM Limited
- * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -181,15 +180,12 @@ public:
      *
      *  @param target   Queue that will dispatch this queue's events as a
      *                  part of its dispatch loop
-     *
-     *  @return Zero on success and negative error code value if chaining fails
-     *
      */
-    int chain(EventQueue *target);
+    void chain(EventQueue *target);
 
 
 
-#if defined(DOXYGEN_ONLY)
+    #if defined(DOXYGEN_ONLY)
     /** Calls an event on the queue
      *
      *  The specified callback will be executed in the context of the event
@@ -270,11 +266,8 @@ public:
      *     }
      * @endcode
      */
-    // AStyle ignore, not handling correctly below
-    // *INDENT-OFF*
     template <typename T, typename R, typename ...Args>
     int call(T *obj, R (T::*method)(Args ...args), Args ...args);
-    // *INDENT-ON*
 
     /** Calls an event on the queue after a specified delay
      *
@@ -353,11 +346,8 @@ public:
      *     }
      * @endcode
      */
-    // AStyle ignore, not handling correctly below
-    // *INDENT-OFF*
     template <typename T, typename R, typename ...Args>
     int call_in(int ms, T *obj, R (T::*method)(Args ...args), Args ...args);
-    // *INDENT-ON*
 
     /** Calls an event on the queue periodically
      *
@@ -450,11 +440,8 @@ public:
      *     }
      * @endcode
      */
-    // AStyle ignore, not handling correctly below
-    // *INDENT-OFF*
     template <typename T, typename R, typename ...Args>
     int call_every(int ms, T *obj, R (T::*method)(Args ...args), Args ...args);
-    // *INDENT-ON*
 
     /** Creates an event bound to the event queue
      *
@@ -496,11 +483,8 @@ public:
      *     }
      * @endcode
      */
-    // AStyle ignore, not handling correctly below
-    // *INDENT-OFF*
     template <typename R, typename ...BoundArgs, typename ...Args>
     Event<void(Args...)> event(R (*func)(BoundArgs...), Args ...args);
-    // *INDENT-ON*
 
     /** Creates an event bound to the event queue
      *
@@ -544,11 +528,8 @@ public:
      *     }
      * @endcode
      */
-    // AStyle ignore, not handling correctly below
-    // *INDENT-OFF*
     template <typename T, typename R, typename ...BoundArgs, typename ...ContextArgs, typename ...Args>
     Event<void(Args...)> event(T *obj, R (T::*method)(BoundArgs..., Args...), ContextArgs ...context_args);
-    // *INDENT-ON*
 
     /** Creates an event bound to the event queue
      *
@@ -588,7 +569,7 @@ public:
     template <typename R, typename ...BoundArgs, typename ...ContextArgs, typename ...Args>
     Event<void(Args...)> event(mbed::Callback<R(BoundArgs..., Args...)> cb, ContextArgs ...context_args);
 
-#else
+    #else
 
     /** Calls an event on the queue
      *
@@ -2819,10 +2800,10 @@ public:
      */
     template <typename R, typename B0, typename B1, typename B2, typename B3, typename B4, typename C0, typename C1, typename C2, typename C3, typename C4, typename A0, typename A1, typename A2, typename A3, typename A4>
     Event<void(A0, A1, A2, A3, A4)> event(mbed::Callback<R(B0, B1, B2, B3, B4, A0, A1, A2, A3, A4)> cb, C0 c0, C1 c1, C2 c2, C3 c3, C4 c4);
-#endif
+    #endif
 
 protected:
-#if !defined(DOXYGEN_ONLY)
+    #if !defined(DOXYGEN_ONLY)
     template <typename F>
     friend class Event;
     struct equeue _equeue;
@@ -3399,7 +3380,7 @@ protected:
             f(c0, c1, c2, c3, c4, a0, a1, a2, a3, a4);
         }
     };
-#endif //!defined(DOXYGEN_ONLY)
+    #endif //!defined(DOXYGEN_ONLY)
 };
 
 }

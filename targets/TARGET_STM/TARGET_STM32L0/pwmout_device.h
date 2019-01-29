@@ -36,7 +36,7 @@
 extern "C" {
 #endif
 
-#if DEVICE_PWMOUT
+#ifdef DEVICE_PWMOUT
 
 #define PWMOUT_INVERTED_NOT_SUPPORTED
 

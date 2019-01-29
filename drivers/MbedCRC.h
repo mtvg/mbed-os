@@ -1,6 +1,5 @@
 /* mbed Microcontroller Library
  * Copyright (c) 2018 ARM Limited
- * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,7 +100,7 @@ class MbedCRC {
 
 public:
     enum CrcMode {
-#if DEVICE_CRC
+#ifdef DEVICE_CRC
         HARDWARE = 0,
 #endif
         TABLE = 1,
@@ -198,7 +197,7 @@ public:
         int32_t status = 0;
 
         switch (_mode) {
-#if DEVICE_CRC
+#ifdef DEVICE_CRC
             case HARDWARE:
                 hal_crc_compute_partial((uint8_t *)buffer, size);
                 *crc = 0;
@@ -232,7 +231,7 @@ public:
     {
         MBED_ASSERT(crc != NULL);
 
-#if DEVICE_CRC
+#ifdef DEVICE_CRC
         if (_mode == HARDWARE) {
             lock();
             crc_mbed_config_t config;
@@ -264,7 +263,7 @@ public:
     {
         MBED_ASSERT(crc != NULL);
 
-#if DEVICE_CRC
+#ifdef DEVICE_CRC
         if (_mode == HARDWARE) {
             *crc = hal_crc_get_result();
             unlock();
@@ -303,7 +302,6 @@ public:
         return width;
     }
 
-#if !defined(DOXYGEN_ONLY)
 private:
     uint32_t _initial_value;
     uint32_t _final_xor;
@@ -316,7 +314,7 @@ private:
      */
     void lock()
     {
-#if DEVICE_CRC
+#ifdef DEVICE_CRC
         if (_mode == HARDWARE) {
             mbed_crc_mutex->lock();
         }
@@ -327,7 +325,7 @@ private:
      */
     virtual void unlock()
     {
-#if DEVICE_CRC
+#ifdef DEVICE_CRC
         if (_mode == HARDWARE) {
             mbed_crc_mutex->unlock();
         }
@@ -497,13 +495,13 @@ private:
     }
 
     /** Constructor init called from all specialized cases of constructor.
-     *  Note: All constructor common code should be in this function.
+     *  Note: All construtor common code should be in this function.
      */
     void mbed_crc_ctor(void)
     {
         MBED_STATIC_ASSERT(width <= 32, "Max 32-bit CRC supported");
 
-#if DEVICE_CRC
+#ifdef DEVICE_CRC
         if (POLY_32BIT_REV_ANSI == polynomial) {
             _crc_table = (uint32_t *)Table_CRC_32bit_Rev_ANSI;
             _mode = TABLE;
@@ -548,7 +546,6 @@ private:
         }
         _mode = (_crc_table != NULL) ? TABLE : BITWISE;
     }
-#endif
 };
 
 #if   defined ( __CC_ARM )

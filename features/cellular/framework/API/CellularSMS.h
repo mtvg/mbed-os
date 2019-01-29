@@ -36,11 +36,6 @@ const uint16_t SMS_SIM_WAIT_TIME_MILLISECONDS = 200;
 const int SMS_ERROR_MULTIPART_ALL_PARTS_NOT_READ = -5001;
 
 /**
- * @addtogroup cellular
- * @{
- */
-
-/**
  *  Class CellularSMS
  *
  *  An abstract interface for SMS sending, reading and deleting.
@@ -166,10 +161,6 @@ public:
      */
     virtual void set_extra_sim_wait_time(int sim_wait_time) = 0;
 };
-
-/**
- * @}
- */
 
 } // namespace mbed
 

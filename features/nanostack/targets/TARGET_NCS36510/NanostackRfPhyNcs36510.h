@@ -17,6 +17,7 @@
 #ifndef NANOSTACK_PHY_NCS36510_H_
 #define NANOSTACK_PHY_NCS36510_H_
 
+#include "mbed.h"
 #include "NanostackRfPhy.h"
 
 class NanostackRfPhyNcs36510 : public NanostackRfPhy {

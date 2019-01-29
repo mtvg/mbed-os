@@ -94,6 +94,3 @@ log
 
 # Icetea related file
 test_suite.json
-
-# default delivery dir
-DELIVERY/

@@ -21,7 +21,6 @@
 #include "nanostack/net_interface.h"
 #include "thread_management_if.h"
 #include "ip6string.h"
-#include "mbed_error.h"
 
 char *Nanostack::Interface::get_ip_address(char *buf, nsapi_size_t buflen)
 {
@@ -70,7 +69,7 @@ void Nanostack::Interface::attach(
 }
 
 Nanostack::Interface::Interface(NanostackPhy &phy) : interface_phy(phy), interface_id(-1), _device_id(-1),
-    _connect_status(NSAPI_STATUS_DISCONNECTED), _previous_connection_status(NSAPI_STATUS_DISCONNECTED), _blocking(true)
+      _connect_status(NSAPI_STATUS_DISCONNECTED), _previous_connection_status(NSAPI_STATUS_DISCONNECTED), _blocking(true)
 {
     mesh_system_init();
 }
@@ -120,7 +119,7 @@ nsapi_error_t MeshInterfaceNanostack::initialize(NanostackRfPhy *phy)
 void Nanostack::Interface::network_handler(mesh_connection_status_t status)
 {
     if ((status == MESH_CONNECTED || status == MESH_CONNECTED_LOCAL ||
-            status == MESH_CONNECTED_GLOBAL) && _blocking) {
+         status == MESH_CONNECTED_GLOBAL) && _blocking) {
         connect_semaphore.release();
     }
 
@@ -132,10 +131,10 @@ void Nanostack::Interface::network_handler(mesh_connection_status_t status)
             _connect_status = NSAPI_STATUS_LOCAL_UP;
         }
         if (arm_net_address_get(interface_id, ADDR_IPV6_GP, temp_ipv6_global) == 0
-                && (memcmp(temp_ipv6_global, temp_ipv6_local, 16) != 0)) {
+            && (memcmp(temp_ipv6_global, temp_ipv6_local, 16) != 0)) {
             _connect_status = NSAPI_STATUS_GLOBAL_UP;
         }
-    } else if (status == MESH_CONNECTED_LOCAL) {
+    } else if (status == MESH_CONNECTED_LOCAL ) {
         _connect_status = NSAPI_STATUS_LOCAL_UP;
     } else if (status == MESH_CONNECTED_GLOBAL) {
         _connect_status = NSAPI_STATUS_GLOBAL_UP;

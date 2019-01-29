@@ -60,7 +60,7 @@ void EventQueue::background(Callback<void(int)> update)
 {
 }
 
-int EventQueue::chain(EventQueue *target)
+void EventQueue::chain(EventQueue *target)
 {
 }
 

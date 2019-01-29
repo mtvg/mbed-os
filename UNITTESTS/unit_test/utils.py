@@ -51,13 +51,8 @@ def execute_program(args, error_msg="An error occurred!", success_msg=None):
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT)
 
-        # Output is stripped to remove newline character. logging adds its own
-        # so we avoid double newlines.
-        # Because the process can terminate before the loop has read all lines,
-        # we read the output remnant just in case. Otherwise we lose it.
         while process.poll() is None:
-            logging.info(process.stdout.readline().decode('utf8').rstrip('\n'))
-        logging.info(process.stdout.read().decode('utf8').rstrip('\n'))
+            logging.info(process.stdout.readline().decode("utf8"))
 
         retcode = process.wait()
 

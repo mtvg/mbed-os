@@ -8,10 +8,6 @@
             "help" : "Port of echo server",
             "value" : "7"
         },
-        "echo-server-discard-port" : {
-            "help" : "Discard port of echo server",
-            "value" : "9"
-        },
         "wifi-secure-ssid": {
             "help": "WiFi SSID for WPA2 secured network",
             "value": "\"SSID-SECURE\""

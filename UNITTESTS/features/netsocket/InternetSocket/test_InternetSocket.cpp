@@ -24,15 +24,10 @@ extern std::list<uint32_t> eventFlagsStubNextRetval;
 // InternetSocket is an abstract class, so we have to test it via its child.
 class stubInternetSocket : public InternetSocket {
 protected:
-    nsapi_error_t return_value;
+    nsapi_error_t return_value = 0;
 public:
-    stubInternetSocket()
-    {
-        return_value = 0;
-    }
     virtual nsapi_error_t connect(const SocketAddress &address)
     {
-        _remote_peer = address;
         return return_value;
     }
     virtual nsapi_size_or_error_t send(const void *data, nsapi_size_t size)
@@ -78,6 +73,14 @@ public:
     void rem_writer(void)
     {
         _writers--;
+    }
+    void add_pending(void)
+    {
+        _pending++;
+    }
+    void rem_pending(void)
+    {
+        _pending--;
     }
 
 protected:
@@ -223,26 +226,4 @@ TEST_F(TestInternetSocket, sigio)
     socket->sigio(mbed::callback(my_callback));
     socket->close(); // Trigger event;
     EXPECT_EQ(callback_is_called, true);
-}
-
-TEST_F(TestInternetSocket, getpeername)
-{
-    SocketAddress peer;
-    SocketAddress zero;
-
-    stack.return_value = NSAPI_ERROR_OK;
-
-    EXPECT_EQ(socket->getpeername(&peer), NSAPI_ERROR_NO_SOCKET);
-
-    socket->open((NetworkStack *)&stack);
-    socket->connect(zero);
-
-    EXPECT_EQ(socket->getpeername(&peer), NSAPI_ERROR_NO_CONNECTION);
-
-    const nsapi_addr_t saddr = {NSAPI_IPv4, {192, 168, 0, 1} };
-    const SocketAddress remote(saddr, 1024);
-    socket->connect(remote);
-
-    EXPECT_EQ(socket->getpeername(&peer), NSAPI_ERROR_OK);
-    EXPECT_EQ(remote, peer);
 }

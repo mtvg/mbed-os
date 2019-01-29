@@ -53,7 +53,6 @@
  *        would be defined in mbedtls/ecp.h from ecp.c for our inclusion */
 #define ECP_SHORTWEIERSTRASS
 
-#include "mbedtls/platform.h"
 #include "mbedtls/ecp_internal.h"
 #include "mbed_toolchain.h"
 #include "mbed_assert.h"
@@ -223,23 +222,12 @@ unsigned char mbedtls_internal_ecp_grp_capable( const mbedtls_ecp_group *grp )
 
 int mbedtls_internal_ecp_init( const mbedtls_ecp_group *grp )
 {
-    /* Behavior of mbedtls_internal_ecp_init()/mbedtls_internal_ecp_free()
-     *
-     * mbedtls_internal_ecp_init()/mbedtls_internal_ecp_free() are like pre-op/post-op calls
-     * and they guarantee:
-     *
-     * 1. Paired
-     * 2. No overlapping
-     * 3. Upper public function cannot return when ECP alter. is still activated.
-     */
-    
+    /* TODO: Change busy-wait with other means to release CPU */
     /* Acquire ownership of ECC accelerator */
-    crypto_ecc_acquire();
+    while (! crypto_ecc_acquire());
     
-    /* Initialize crypto module */
+    /* Init crypto module */
     crypto_init();
-    
-    /* Enable ECC interrupt */
     ECC_ENABLE_INT();
 
     return 0;
@@ -249,10 +237,9 @@ void mbedtls_internal_ecp_free( const mbedtls_ecp_group *grp )
 {
     /* Disable ECC interrupt */
     ECC_DISABLE_INT();
-
     /* Uninit crypto module */
     crypto_uninit();
-
+    
     /* Release ownership of ECC accelerator */
     crypto_ecc_release();
 }
@@ -497,7 +484,7 @@ NU_STATIC int internal_run_eccop(const mbedtls_ecp_group *grp,
     
     /* Check supported maximum key bits */
     if (grp->pbits > NU_ECC_MAXKEYBITS) {
-        return MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED;
+        return MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
     }
 
     int ret;
@@ -602,7 +589,7 @@ NU_STATIC int internal_run_eccop(const mbedtls_ecp_group *grp,
         ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
         goto cleanup;
     }
-
+    
     /* Configure ECC curve coefficients A/B */
     /* Special case for A = -3 */
     if (grp->A.p == NULL) {
@@ -645,9 +632,10 @@ NU_STATIC int internal_run_eccop(const mbedtls_ecp_group *grp,
     crypto_ecc_prestart();
     CRPT->ECC_CTL = (grp->pbits << CRPT_ECC_CTL_CURVEM_Pos) | eccop | CRPT_ECC_CTL_FSEL_Msk | CRPT_ECC_CTL_START_Msk;
     ecc_done = crypto_ecc_wait();
-
-    MBEDTLS_MPI_CHK(ecc_done ? 0 : MBEDTLS_ERR_PLATFORM_HW_ACCEL_FAILED);
-
+    
+    /* FIXME: Better error code for ECC accelerator error */
+    MBEDTLS_MPI_CHK(ecc_done ? 0 : -1);
+    
     /* (X1, Y1) hold the normalized result. */
     MBEDTLS_MPI_CHK(internal_mpi_read_eccreg(&R->X, (uint32_t *) CRPT->ECC_X1, NU_ECC_BIGNUM_MAXWORD));
     MBEDTLS_MPI_CHK(internal_mpi_read_eccreg(&R->Y, (uint32_t *) CRPT->ECC_Y1, NU_ECC_BIGNUM_MAXWORD));
@@ -656,7 +644,7 @@ NU_STATIC int internal_run_eccop(const mbedtls_ecp_group *grp,
 cleanup:
 
     mbedtls_mpi_free(&N_);
-
+    
     return ret;
 }
 
@@ -687,7 +675,7 @@ NU_STATIC int internal_run_modop(mbedtls_mpi *r,
     
     /* Check supported maximum key bits */
     if (pbits > NU_ECC_MAXKEYBITS) {
-        return MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED;
+        return MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
     }
     
     /* Check MODOP operations are legal */
@@ -710,7 +698,7 @@ NU_STATIC int internal_run_modop(mbedtls_mpi *r,
     const mbedtls_mpi *Np;
     
     mbedtls_mpi_init(&N_);
-
+    
     /* Use INTERNAL_MPI_NORM(Np, N1, N_, P) to get normalized MPI
      *
      * N_: Holds normalized MPI if the passed-in MPI N1 is not
@@ -738,9 +726,10 @@ NU_STATIC int internal_run_modop(mbedtls_mpi *r,
     crypto_ecc_prestart();
     CRPT->ECC_CTL = (pbits << CRPT_ECC_CTL_CURVEM_Pos) | (ECCOP_MODULE | modop) | CRPT_ECC_CTL_FSEL_Msk | CRPT_ECC_CTL_START_Msk;
     ecc_done = crypto_ecc_wait();
-
-    MBEDTLS_MPI_CHK(ecc_done ? 0 : MBEDTLS_ERR_PLATFORM_HW_ACCEL_FAILED);
-
+    
+    /* FIXME: Better error code for ECC accelerator error */
+    MBEDTLS_MPI_CHK(ecc_done ? 0 : -1);
+    
     /* X1 holds the result. */
     MBEDTLS_MPI_CHK(internal_mpi_read_eccreg(r, (uint32_t *) CRPT->ECC_X1, NU_ECC_BIGNUM_MAXWORD));
 

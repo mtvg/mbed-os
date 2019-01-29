@@ -18,7 +18,7 @@
  *
  */
 
-#if DEVICE_TRNG
+#if defined(DEVICE_TRNG)
 
 #include <stdlib.h>
 #include "cmsis.h"

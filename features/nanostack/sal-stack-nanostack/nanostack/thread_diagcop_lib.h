@@ -55,8 +55,7 @@
 #define DIAGCOP_TLV_SUPPLY_VOLTAGE                          15  /**< Can not reset*/
 #define DIAGCOP_TLV_CHILD_TABLE                             16  /**< Can not reset*/
 #define DIAGCOP_TLV_CHANNEL_PAGES                           17  /**< Can not reset*/
-#define DIAGCOP_TLV_TYPE_LIST                               18  /**< Cannot reset*/
-#define DIAGCOP_TLV_MAX_CHILD_TIMEOUT                       19  /**< Cannot reset*/
+#define DIAGCOP_TLV_TYPE_LIST                               18  /**< List type*/
 
 /**
  * \brief Write array TLV.

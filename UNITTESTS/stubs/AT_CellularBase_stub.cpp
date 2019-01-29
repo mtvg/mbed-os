@@ -34,8 +34,7 @@ AT_CellularBase::AT_CellularBase(ATHandler &at) : _at(at)
 
 ATHandler &AT_CellularBase::get_at_handler()
 {
-    AT_CellularBase_stub::handler_value = &_at;
-    return _at;
+    return *AT_CellularBase_stub::handler_value;
 }
 
 device_err_t AT_CellularBase::get_device_error() const

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
  
-#if DEVICE_ANALOGIN
+#ifdef DEVICE_ANALOGIN
 #include "hal/analogin_api.h"
 
 #include "pinmap.h"

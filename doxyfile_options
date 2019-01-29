@@ -859,10 +859,7 @@ EXCLUDE_PATTERNS       = */tools/* \
                          */ble/pal/* \
                          */components/802.15.4_RF/* \
                          */components/wifi/* \
-                         */UNITTESTS/* \
-                         */features/cellular/framework/AT/* \
-                         */features/cellular/framework/device/* \
-                         */features/cellular/framework/common/*
+                         */UNITTESTS/*
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
 # (namespaces, classes, functions, etc.) that should be excluded from the
@@ -2086,7 +2083,6 @@ PREDEFINED             = DOXYGEN_ONLY            \
                          DEVICE_INTERRUPTIN      \
                          DEVICE_ITM              \
                          DEVICE_LPTICKER         \
-                         DEVICE_MPU              \
                          DEVICE_PORTIN           \
                          DEVICE_PORTINOUT        \
                          DEVICE_PORTOUT          \
@@ -2102,8 +2098,6 @@ PREDEFINED             = DOXYGEN_ONLY            \
                          DEVICE_SPISLAVE         \
                          DEVICE_QSPI             \
                          DEVICE_STORAGE          \
-                         COMPONENT_SPE           \
-                         COMPONENT_SPM_MAILBOX   \
                          "MBED_DEPRECATED_SINCE(d, m)=" \
                          "MBED_ENABLE_IF_CALLBACK_COMPATIBLE(F, M)=" \
                          "MBED_DEPRECATED(s)="

@@ -18,7 +18,6 @@
 #include "UBLOX_PPP.h"
 #include "UBLOX_PPP_CellularNetwork.h"
 #include "UBLOX_PPP_CellularPower.h"
-#include "UBLOX_PPP_CellularContext.h"
 
 using namespace mbed;
 using namespace events;
@@ -30,7 +29,7 @@ static const AT_CellularBase::SupportedFeature unsupported_features[] =  {
 };
 #endif
 
-UBLOX_PPP::UBLOX_PPP(FileHandle *fh) : AT_CellularDevice(fh)
+UBLOX_PPP::UBLOX_PPP(EventQueue &queue) : AT_CellularDevice(queue)
 {
 #ifdef TARGET_UBLOX_C027
     AT_CellularBase::set_unsupported_features(unsupported_features);
@@ -49,9 +48,4 @@ AT_CellularNetwork *UBLOX_PPP::open_network_impl(ATHandler &at)
 AT_CellularPower *UBLOX_PPP::open_power_impl(ATHandler &at)
 {
     return new UBLOX_PPP_CellularPower(at);
-}
-
-AT_CellularContext *UBLOX_PPP::create_context_impl(ATHandler &at, const char *apn)
-{
-    return new UBLOX_PPP_CellularContext(at, this, apn);
 }

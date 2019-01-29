@@ -33,13 +33,18 @@
 
 using namespace utest::v1;
 
-#if MBED_CONF_NSAPI_SOCKET_STATS_ENABLE
-mbed_stats_socket_t udp_stats[MBED_CONF_NSAPI_SOCKET_STATS_MAX_COUNT];
-#endif
+namespace {
+NetworkInterface *net;
+}
+
+NetworkInterface *get_interface()
+{
+    return net;
+}
 
 static void _ifup()
 {
-    NetworkInterface *net = NetworkInterface::get_default_instance();
+    net = NetworkInterface::get_default_instance();
     nsapi_error_t err = net->connect();
     TEST_ASSERT_EQUAL(NSAPI_ERROR_OK, err);
     printf("MBED: UDPClient IP address is '%s'\n", net->get_ip_address());
@@ -47,7 +52,7 @@ static void _ifup()
 
 static void _ifdown()
 {
-    NetworkInterface::get_default_instance()->disconnect();
+    net->disconnect();
     printf("MBED: ifdown\n");
 }
 
@@ -71,13 +76,6 @@ void fill_tx_buffer_ascii(char *buff, size_t len)
     }
 }
 
-#if MBED_CONF_NSAPI_SOCKET_STATS_ENABLE
-int fetch_stats()
-{
-    return SocketStats::mbed_stats_socket_get_each(&udp_stats[0], MBED_CONF_NSAPI_SOCKET_STATS_MAX_COUNT);
-}
-#endif
-
 // Test setup
 utest::v1::status_t greentea_setup(const size_t number_of_cases)
 {
@@ -93,26 +91,17 @@ void greentea_teardown(const size_t passed, const size_t failed, const failure_t
 }
 
 Case cases[] = {
-    Case("UDPSOCKET_ECHOTEST", UDPSOCKET_ECHOTEST),
     Case("UDPSOCKET_ECHOTEST_NONBLOCK", UDPSOCKET_ECHOTEST_NONBLOCK),
     Case("UDPSOCKET_OPEN_CLOSE_REPEAT", UDPSOCKET_OPEN_CLOSE_REPEAT),
     Case("UDPSOCKET_OPEN_LIMIT", UDPSOCKET_OPEN_LIMIT),
     Case("UDPSOCKET_SENDTO_TIMEOUT", UDPSOCKET_SENDTO_TIMEOUT),
-    Case("UDPSOCKET_OPEN_DESTRUCT", UDPSOCKET_OPEN_DESTRUCT),
-    Case("UDPSOCKET_OPEN_TWICE", UDPSOCKET_OPEN_TWICE),
-    Case("UDPSOCKET_BIND_PORT", UDPSOCKET_BIND_PORT),
-    Case("UDPSOCKET_BIND_PORT_FAIL", UDPSOCKET_BIND_PORT_FAIL),
-    Case("UDPSOCKET_BIND_ADDRESS_PORT", UDPSOCKET_BIND_ADDRESS_PORT),
-    Case("UDPSOCKET_BIND_ADDRESS_NULL", UDPSOCKET_BIND_ADDRESS_NULL),
-    Case("UDPSOCKET_BIND_ADDRESS_INVALID", UDPSOCKET_BIND_ADDRESS_INVALID),
-    Case("UDPSOCKET_BIND_ADDRESS", UDPSOCKET_BIND_ADDRESS),
-    Case("UDPSOCKET_BIND_WRONG_TYPE", UDPSOCKET_BIND_WRONG_TYPE),
-    Case("UDPSOCKET_BIND_UNOPENED", UDPSOCKET_BIND_UNOPENED),
+#ifdef MBED_EXTENDED_TESTS
     Case("UDPSOCKET_SENDTO_INVALID", UDPSOCKET_SENDTO_INVALID),
     Case("UDPSOCKET_ECHOTEST", UDPSOCKET_ECHOTEST),
     Case("UDPSOCKET_ECHOTEST_BURST", UDPSOCKET_ECHOTEST_BURST),
     Case("UDPSOCKET_ECHOTEST_BURST_NONBLOCK", UDPSOCKET_ECHOTEST_BURST_NONBLOCK),
     Case("UDPSOCKET_SENDTO_REPEAT", UDPSOCKET_SENDTO_REPEAT),
+#endif
 };
 
 Specification specification(greentea_setup, cases, greentea_teardown, greentea_continue_handlers);

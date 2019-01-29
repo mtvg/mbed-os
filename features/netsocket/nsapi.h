@@ -40,12 +40,9 @@
 #include "netsocket/UDPSocket.h"
 #include "netsocket/TCPSocket.h"
 #include "netsocket/TCPServer.h"
-#include "netsocket/TLSSocketWrapper.h"
-#include "netsocket/DTLSSocketWrapper.h"
 #include "netsocket/TLSSocket.h"
-#include "netsocket/DTLSSocket.h"
 
-#endif // __cplusplus
+#endif
 
 
 #endif

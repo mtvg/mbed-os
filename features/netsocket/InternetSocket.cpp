@@ -21,11 +21,9 @@ using namespace mbed;
 
 InternetSocket::InternetSocket()
     : _stack(0), _socket(0), _timeout(osWaitForever),
-      _readers(0), _writers(0),
+      _readers(0), _writers(0), _pending(0),
       _factory_allocated(false)
 {
-    core_util_atomic_flag_clear(&_pending);
-    _socket_stats.stats_new_socket_entry(this);
 }
 
 InternetSocket::~InternetSocket()
@@ -50,7 +48,6 @@ nsapi_error_t InternetSocket::open(NetworkStack *stack)
         return err;
     }
 
-    _socket_stats.stats_update_socket_state(this, SOCK_OPEN);
     _socket = socket;
     _event = callback(this, &InternetSocket::event);
     _stack->socket_attach(_socket, Callback<void()>::thunk, &_event);
@@ -65,7 +62,6 @@ nsapi_error_t InternetSocket::close()
 
     nsapi_error_t ret = NSAPI_ERROR_OK;
     if (!_socket)  {
-        _lock.unlock();
         return NSAPI_ERROR_NO_SOCKET;
     }
 
@@ -75,7 +71,7 @@ nsapi_error_t InternetSocket::close()
     _socket = 0;
     ret = _stack->socket_close(socket);
     _stack = 0; // Invalidate the stack pointer - otherwise open() fails.
-    _socket_stats.stats_update_socket_state(this, SOCK_CLOSED);
+
     // Wakeup anything in a blocking operation
     // on this socket
     event();
@@ -200,31 +196,20 @@ void InternetSocket::event()
 {
     _event_flag.set(READ_FLAG | WRITE_FLAG);
 
-    if (_callback && !core_util_atomic_flag_test_and_set(&_pending)) {
+    _pending += 1;
+    if (_callback && _pending == 1) {
         _callback();
     }
 }
 
 void InternetSocket::sigio(Callback<void()> callback)
 {
-    core_util_critical_section_enter();
+    _lock.lock();
     _callback = callback;
-    core_util_critical_section_exit();
+    _lock.unlock();
 }
 
 void InternetSocket::attach(Callback<void()> callback)
 {
     sigio(callback);
-}
-
-nsapi_error_t InternetSocket::getpeername(SocketAddress *address)
-{
-    if (!_socket) {
-        return NSAPI_ERROR_NO_SOCKET;
-    }
-    if (!_remote_peer) {
-        return NSAPI_ERROR_NO_CONNECTION;
-    }
-    *address = _remote_peer;
-    return NSAPI_ERROR_OK;
 }

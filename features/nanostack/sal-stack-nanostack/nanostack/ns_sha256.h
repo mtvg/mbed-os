@@ -112,7 +112,8 @@ static inline void ns_sha256_nbits(const void *input, size_t ilen, void *output,
 /**
  * \brief          SHA-256 context structure
  */
-typedef struct {
+typedef struct
+{
     uint32_t total[2];          /*!< number of bytes processed  */
     uint32_t state[8];          /*!< intermediate digest state  */
     unsigned char buffer[64];   /*!< data block being processed */
@@ -124,14 +125,14 @@ ns_sha256_context;
  *
  * \param ctx      SHA-256 context to be initialized
  */
-void ns_sha256_init(ns_sha256_context *ctx);
+void ns_sha256_init( ns_sha256_context *ctx );
 
 /**
  * \brief          Clear SHA-256 context
  *
  * \param ctx      SHA-256 context to be cleared
  */
-void ns_sha256_free(ns_sha256_context *ctx);
+void ns_sha256_free( ns_sha256_context *ctx );
 
 /**
  * \brief          Clone (the state of) a SHA-256 context
@@ -139,15 +140,15 @@ void ns_sha256_free(ns_sha256_context *ctx);
  * \param dst      The destination context
  * \param src      The context to be cloned
  */
-void ns_sha256_clone(ns_sha256_context *dst,
-                     const ns_sha256_context *src);
+void ns_sha256_clone( ns_sha256_context *dst,
+                      const ns_sha256_context *src );
 
 /**
  * \brief          SHA-256 context setup
  *
  * \param ctx      context to be initialized
  */
-void ns_sha256_starts(ns_sha256_context *ctx);
+void ns_sha256_starts( ns_sha256_context *ctx );
 
 /**
  * \brief          SHA-256 process buffer
@@ -156,8 +157,8 @@ void ns_sha256_starts(ns_sha256_context *ctx);
  * \param input    buffer holding the  data
  * \param ilen     length of the input data
  */
-void ns_sha256_update(ns_sha256_context *ctx, const void *input,
-                      size_t ilen);
+void ns_sha256_update( ns_sha256_context *ctx, const void *input,
+                       size_t ilen );
 
 /**
  * \brief          SHA-256 final digest
@@ -165,7 +166,7 @@ void ns_sha256_update(ns_sha256_context *ctx, const void *input,
  * \param ctx      SHA-256 context
  * \param output   SHA-256 checksum result
  */
-void ns_sha256_finish(ns_sha256_context *ctx, void *output);
+void ns_sha256_finish( ns_sha256_context *ctx, void *output );
 
 /**
  * \brief          SHA-256 final digest
@@ -174,8 +175,8 @@ void ns_sha256_finish(ns_sha256_context *ctx, void *output);
  * \param output   SHA-256 checksum result
  * \param obits    Number of bits of to output - must be multiple of 32
  */
-void ns_sha256_finish_nbits(ns_sha256_context *ctx,
-                            void *output, unsigned obits);
+void ns_sha256_finish_nbits( ns_sha256_context *ctx,
+                             void *output, unsigned obits );
 
 /**
  * \brief          Output = SHA-256( input buffer )
@@ -184,8 +185,8 @@ void ns_sha256_finish_nbits(ns_sha256_context *ctx,
  * \param ilen     length of the input data
  * \param output   SHA-256 checksum result
  */
-void ns_sha256(const void *input, size_t ilen,
-               void *output);
+void ns_sha256( const void *input, size_t ilen,
+                void *output );
 
 /**
  * \brief          Output = SHA-256( input buffer )
@@ -195,8 +196,8 @@ void ns_sha256(const void *input, size_t ilen,
  * \param output   SHA-256 checksum result
  * \param obits    Number of bits of to output - must be multiple of 32
  */
-void ns_sha256_nbits(const void *input, size_t ilen,
-                     void *output, unsigned obits);
+void ns_sha256_nbits( const void *input, size_t ilen,
+                      void *output, unsigned obits );
 
 #endif /* NS_USE_EXTERNAL_MBED_TLS */
 

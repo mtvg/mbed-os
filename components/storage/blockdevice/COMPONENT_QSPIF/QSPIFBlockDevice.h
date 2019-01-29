@@ -43,7 +43,7 @@ enum qspif_polarity_mode {
     QSPIF_POLARITY_MODE_1      /* CPOL=1, CPHA=1 */
 };
 
-#define QSPIF_MAX_REGIONS   10
+#define QSPIF_MAX_REGIONS	10
 #define MAX_NUM_OF_ERASE_TYPES 4
 #define QSPIF_MAX_ACTIVE_FLASH_DEVICES 10
 
@@ -85,7 +85,7 @@ enum qspif_polarity_mode {
  *  }
  *  @endcode
  */
-class QSPIFBlockDevice : public mbed::BlockDevice {
+class QSPIFBlockDevice : public BlockDevice {
 public:
     /** Create QSPIFBlockDevice - An SFDP based Flash Block Device over QSPI bus
      *
@@ -121,10 +121,7 @@ public:
 
     /** Desctruct QSPIFBlockDevie
       */
-    ~QSPIFBlockDevice()
-    {
-        deinit();
-    }
+    ~QSPIFBlockDevice() {deinit();}
 
     /** Read blocks from a block device
      *
@@ -134,7 +131,7 @@ public:
      *  @return         QSPIF_BD_ERROR_OK(0) - success
      *                  QSPIF_BD_ERROR_DEVICE_ERROR - device driver transaction failed
      */
-    virtual int read(void *buffer, mbed::bd_addr_t addr, mbed::bd_size_t size);
+    virtual int read(void *buffer, bd_addr_t addr, bd_size_t size);
 
     /** Program blocks to a block device
      *
@@ -149,7 +146,7 @@ public:
      *                  QSPIF_BD_ERROR_WREN_FAILED - Write Enable failed
      *                  QSPIF_BD_ERROR_PARSING_FAILED - unexpected format or values in one of the SFDP tables
      */
-    virtual int program(const void *buffer, mbed::bd_addr_t addr, mbed::bd_size_t size);
+    virtual int program(const void *buffer, bd_addr_t addr, bd_size_t size);
 
     /** Erase blocks on a block device
      *
@@ -164,27 +161,27 @@ public:
      *                  QSPIF_BD_ERROR_PARSING_FAILED - unexpected format or values in one of the SFDP tables
      *                  QSPIF_BD_ERROR_INVALID_ERASE_PARAMS - Trying to erase unaligned address or size
      */
-    virtual int erase(mbed::bd_addr_t addr, mbed::bd_size_t size);
+    virtual int erase(bd_addr_t addr, bd_size_t size);
 
     /** Get the size of a readable block
      *
      *  @return         Size of a readable block in bytes
      */
-    virtual mbed::bd_size_t get_read_size() const;
+    virtual bd_size_t get_read_size() const;
 
     /** Get the size of a programable block
      *
      *  @return         Size of a program block size in bytes
      *  @note Must be a multiple of the read size
      */
-    virtual mbed::bd_size_t get_program_size() const;
+    virtual bd_size_t get_program_size() const;
 
     /** Get the size of a eraseable block
      *
      *  @return         Size of a minimal erase block, common to all regions, in bytes
      *  @note Must be a multiple of the program size
      */
-    virtual mbed::bd_size_t get_erase_size() const;
+    virtual bd_size_t get_erase_size() const;
 
     /** Get the size of minimal eraseable sector size of given address
      *
@@ -192,7 +189,7 @@ public:
      *  @return         Size of minimal erase sector size, in given address region, in bytes
      *  @note Must be a multiple of the program size
      */
-    virtual mbed::bd_size_t get_erase_size(mbed::bd_addr_t addr);
+    virtual bd_size_t get_erase_size(bd_addr_t addr);
 
     /** Get the value of storage byte after it was erased
      *
@@ -209,13 +206,7 @@ public:
      *
      *  @return         Size of the underlying device in bytes
      */
-    virtual mbed::bd_size_t size() const;
-
-    /** Get the BlockDevice class type.
-     *
-     *  @return         A string represent the BlockDevice class type.
-     */
-    virtual const char *get_type() const;
+    virtual bd_size_t size() const;
 
 private:
     // Internal functions
@@ -235,18 +226,18 @@ private:
     /*   Calls to QSPI Driver APIs  */
     /********************************/
     // Send Program => Write command to Driver
-    qspi_status_t _qspi_send_program_command(unsigned int prog_instruction, const void *buffer, mbed::bd_addr_t addr,
-                                             mbed::bd_size_t *size);
+    qspi_status_t _qspi_send_program_command(unsigned int prog_instruction, const void *buffer, bd_addr_t addr,
+            bd_size_t *size);
 
     // Send Read command to Driver
-    qspi_status_t _qspi_send_read_command(unsigned int read_instruction, void *buffer, mbed::bd_addr_t addr, mbed::bd_size_t size);
+    qspi_status_t _qspi_send_read_command(unsigned int read_instruction, void *buffer, bd_addr_t addr, bd_size_t size);
 
     // Send Erase Instruction using command_transfer command to Driver
-    qspi_status_t _qspi_send_erase_command(unsigned int erase_instruction, mbed::bd_addr_t addr, mbed::bd_size_t size);
+    qspi_status_t _qspi_send_erase_command(unsigned int erase_instruction, bd_addr_t addr, bd_size_t size);
 
     // Send Generic command_transfer command to Driver
-    qspi_status_t _qspi_send_general_command(unsigned int instruction_int, mbed::bd_addr_t addr, const char *tx_buffer,
-                                             size_t tx_length, const char *rx_buffer, size_t rx_length);
+    qspi_status_t _qspi_send_general_command(unsigned int instruction_int, bd_addr_t addr, const char *tx_buffer,
+            size_t tx_length, const char *rx_buffer, size_t rx_length);
 
     // Send Bus configure_format command to Driver
     qspi_status_t _qspi_configure_format(qspi_bus_width_t inst_width, qspi_bus_width_t address_width,
@@ -275,8 +266,8 @@ private:
     /* SFDP Detection and Parsing Functions */
     /****************************************/
     // Parse SFDP Headers and retrieve Basic Param and Sector Map Tables (if exist)
-    int _sfdp_parse_sfdp_headers(uint32_t &basic_table_addr, size_t &basic_table_size,
-                                 uint32_t &sector_map_table_addr, size_t &sector_map_table_size);
+    int _sfdp_parse_sfdp_headers(uint32_t& basic_table_addr, size_t& basic_table_size,
+                                 uint32_t& sector_map_table_addr, size_t& sector_map_table_size);
 
     // Parse and Detect required Basic Parameters from Table
     int _sfdp_parse_basic_param_table(uint32_t basic_table_addr, size_t basic_table_size);
@@ -285,8 +276,8 @@ private:
     int _sfdp_parse_sector_map_table(uint32_t sector_map_table_addr, size_t sector_map_table_size);
 
     // Detect fastest read Bus mode supported by device
-    int _sfdp_detect_best_bus_read_mode(uint8_t *basic_param_table_ptr, int basic_param_table_size, bool &set_quad_enable,
-                                        bool &is_qpi_mode, unsigned int &read_inst);
+    int _sfdp_detect_best_bus_read_mode(uint8_t *basic_param_table_ptr, int basic_param_table_size, bool& set_quad_enable,
+                                        bool& is_qpi_mode, unsigned int& read_inst);
 
     // Enable Quad mode if supported (1-1-4, 1-4-4, 4-4-4 bus modes)
     int _sfdp_set_quad_enabled(uint8_t *basic_param_table_ptr);
@@ -299,20 +290,22 @@ private:
 
     // Detect all supported erase types
     int _sfdp_detect_erase_types_inst_and_size(uint8_t *basic_param_table_ptr, int basic_param_table_size,
-                                               unsigned int &erase4k_inst,
-                                               unsigned int *erase_type_inst_arr, unsigned int *erase_type_size_arr);
+            unsigned int& erase4k_inst,
+            unsigned int *erase_type_inst_arr, unsigned int *erase_type_size_arr);
 
     /***********************/
     /* Utilities Functions */
     /***********************/
     // Find the region to which the given offset belong to
-    int _utils_find_addr_region(mbed::bd_size_t offset);
+    int _utils_find_addr_region(bd_size_t offset);
 
     // Iterate on all supported Erase Types of the Region to which the offset belong to.
     // Iterates from highest type to lowest
-    int _utils_iterate_next_largest_erase_type(uint8_t &bitfield, int size, int offset, int boundry);
+    int _utils_iterate_next_largest_erase_type(uint8_t& bitfield, int size, int offset, int boundry);
 
 private:
+    // Internal Members
+
     // QSPI Driver Object
     mbed::QSPI _qspi;
 

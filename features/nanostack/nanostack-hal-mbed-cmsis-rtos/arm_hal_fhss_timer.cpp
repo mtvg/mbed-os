@@ -16,13 +16,10 @@
 #include "ns_types.h"
 #include "fhss_api.h"
 #include "fhss_config.h"
+#include "mbed.h"
 #include "mbed_trace.h"
 #include "platform/arm_hal_interrupt.h"
 #include <Timer.h>
-#include "equeue.h"
-#include "EventQueue.h"
-#include "mbed_shared_queues.h"
-#include "Timeout.h"
 
 #define TRACE_GROUP "fhdr"
 #ifndef NUMBER_OF_SIMULTANEOUS_TIMEOUTS
@@ -39,7 +36,8 @@ static const fhss_api_t *fhss_active_handle = NULL;
 static EventQueue *equeue;
 #endif
 
-struct fhss_timeout_s {
+struct fhss_timeout_s
+{
     void (*fhss_timer_callback)(const fhss_api_t *fhss_api, uint16_t);
     uint32_t start_time;
     uint32_t stop_time;

@@ -75,6 +75,7 @@ DIR *dd[MBED_TEST_DIRS];
 FILE *fd[MBED_TEST_FILES];
 struct dirent ent;
 struct dirent *ed;
+size_t size;
 uint8_t buffer[MBED_TEST_BUFFER];
 uint8_t rbuffer[MBED_TEST_BUFFER];
 uint8_t wbuffer[MBED_TEST_BUFFER];
@@ -88,7 +89,6 @@ void test_seek_tests()
     TEST_ASSERT_EQUAL(0, res);
 
     {
-        size_t size;
         res = MBED_TEST_FILESYSTEM::format(&bd);
         TEST_ASSERT_EQUAL(0, res);
         res = fs.mount(&bd);
@@ -271,7 +271,6 @@ void test_simple_file_seek()
     TEST_ASSERT_EQUAL(0, res);
 
     {
-        size_t size;
         res = fs.mount(&bd);
         TEST_ASSERT_EQUAL(0, res);
         res = file[0].open(&fs, "hello/kitty42", O_RDONLY);
@@ -319,7 +318,7 @@ void test_simple_file_seek()
         res = memcmp(buffer, "kittycatcat", size);
         TEST_ASSERT_EQUAL(0, res);
 
-        size = file[0].size();
+        size_t size = file[0].size();
         res = file[0].seek(0, SEEK_CUR);
         TEST_ASSERT_EQUAL(size, res);
         res = file[0].close();
@@ -338,7 +337,6 @@ void test_large_file_seek()
     TEST_ASSERT_EQUAL(0, res);
 
     {
-        size_t size;
         res = fs.mount(&bd);
         TEST_ASSERT_EQUAL(0, res);
         res = file[0].open(&fs, "hello/kitty42", O_RDONLY);
@@ -386,7 +384,7 @@ void test_large_file_seek()
         res = memcmp(buffer, "kittycatcat", size);
         TEST_ASSERT_EQUAL(0, res);
 
-        size = file[0].size();
+        size_t size = file[0].size();
         res = file[0].seek(0, SEEK_CUR);
         TEST_ASSERT_EQUAL(size, res);
         res = file[0].close();
@@ -405,7 +403,6 @@ void test_simple_file_seek_and_write()
     TEST_ASSERT_EQUAL(0, res);
 
     {
-        size_t size;
         res = fs.mount(&bd);
         TEST_ASSERT_EQUAL(0, res);
         res = file[0].open(&fs, "hello/kitty42", O_RDWR);
@@ -453,7 +450,7 @@ void test_simple_file_seek_and_write()
         res = memcmp(buffer, "kittycatcat", size);
         TEST_ASSERT_EQUAL(0, res);
 
-        size = file[0].size();
+        size_t size = file[0].size();
         res = file[0].seek(0, SEEK_CUR);
         TEST_ASSERT_EQUAL(size, res);
         res = file[0].close();
@@ -472,7 +469,6 @@ void test_large_file_seek_and_write()
     TEST_ASSERT_EQUAL(0, res);
 
     {
-        size_t size;
         res = fs.mount(&bd);
         TEST_ASSERT_EQUAL(0, res);
         res = file[0].open(&fs, "hello/kitty42", O_RDWR);
@@ -522,7 +518,7 @@ void test_large_file_seek_and_write()
         res = memcmp(buffer, "kittycatcat", size);
         TEST_ASSERT_EQUAL(0, res);
 
-        size = file[0].size();
+        size_t size = file[0].size();
         res = file[0].seek(0, SEEK_CUR);
         TEST_ASSERT_EQUAL(size, res);
         res = file[0].close();
@@ -541,7 +537,6 @@ void test_boundary_seek_and_write()
     TEST_ASSERT_EQUAL(0, res);
 
     {
-        size_t size;
         res = fs.mount(&bd);
         TEST_ASSERT_EQUAL(0, res);
         res = file[0].open(&fs, "hello/kitty42", O_RDWR);
@@ -588,7 +583,6 @@ void test_out_of_bounds_seek()
     TEST_ASSERT_EQUAL(0, res);
 
     {
-        size_t size;
         res = fs.mount(&bd);
         TEST_ASSERT_EQUAL(0, res);
         res = file[0].open(&fs, "hello/kitty42", O_RDWR);

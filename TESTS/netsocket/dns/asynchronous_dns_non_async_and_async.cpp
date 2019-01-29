@@ -45,9 +45,9 @@ void ASYNCHRONOUS_DNS_NON_ASYNC_AND_ASYNC()
         TEST_ASSERT(strlen(addr.get_ip_address()) > 1);
     }
 
-    semaphore.wait(100);
+    semaphore.wait();
 
-    TEST_ASSERT_EQUAL(NSAPI_ERROR_OK, data.result);
+    TEST_ASSERT(data.result == NSAPI_ERROR_OK);
 
     printf("DNS: query \"%s\" => \"%s\"\n",
            dns_test_hosts_second[0], data.addr.get_ip_address());

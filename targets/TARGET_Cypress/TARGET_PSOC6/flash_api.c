@@ -82,11 +82,4 @@ uint32_t flash_get_size(const flash_t *obj)
     return CY_FLASH_SIZE;
 }
 
-uint8_t flash_get_erase_value(const flash_t *obj)
-{
-    (void)obj;
-
-    return 0x00;
-}
-
 #endif // DEVICE_FLASH

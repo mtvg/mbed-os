@@ -5,9 +5,9 @@ from __future__ import print_function, division, absolute_import
 
 from abc import abstractmethod, ABCMeta
 from sys import stdout, exit, argv, path
-from os import sep
+from os import sep, rename, remove
 from os.path import (basename, dirname, join, relpath, abspath, commonprefix,
-                     splitext)
+                     splitext, exists)
 
 # Be sure that the tools directory is in the search path
 ROOT = abspath(join(dirname(__file__), ".."))
@@ -25,6 +25,7 @@ from jinja2.environment import Environment
 
 from tools.utils import (argparse_filestring_type, argparse_lowercase_hyphen_type,
                          argparse_uppercase_type)
+from tools.settings import COMPARE_FIXED
 
 
 class _Parser(object):
@@ -304,7 +305,7 @@ class _ArmccParser(_Parser):
 class _IarParser(_Parser):
     RE = re.compile(
         r'^\s+(.+)\s+(zero|const|ro code|inited|uninit)\s'
-        r'+0x([\'\w]+)\s+0x(\w+)\s+(.+)\s.+$')
+        r'+0x(\w{8})\s+0x(\w+)\s+(.+)\s.+$')
 
     RE_CMDLINE_FILE = re.compile(r'^#\s+(.+\.o)')
     RE_LIBRARY = re.compile(r'^(.+\.a)\:.+$')
@@ -830,6 +831,11 @@ class MemapParser(object):
                     self.old_modules = parser().parse_mapfile(old_input)
             except IOError:
                 self.old_modules = None
+            if not COMPARE_FIXED:
+                old_mapfile = "%s.old" % mapfile
+                if exists(old_mapfile):
+                    remove(old_mapfile)
+                rename(mapfile, old_mapfile)
             return True
 
         except IOError as error:

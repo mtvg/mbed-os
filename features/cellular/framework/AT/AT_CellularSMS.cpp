@@ -249,7 +249,7 @@ nsapi_error_t AT_CellularSMS::set_csdh(int show_header)
 nsapi_error_t AT_CellularSMS::initialize(CellularSMSMmode mode)
 {
     if (NSAPI_ERROR_OK != _at.set_urc_handler("+CMTI:", callback(this, &AT_CellularSMS::cmti_urc)) ||
-            NSAPI_ERROR_OK != _at.set_urc_handler("+CMT:", callback(this, &AT_CellularSMS::cmt_urc))) {
+        NSAPI_ERROR_OK != _at.set_urc_handler("+CMT:", callback(this, &AT_CellularSMS::cmt_urc))) {
         return NSAPI_ERROR_NO_MEMORY;
     }
 
@@ -294,8 +294,11 @@ char *AT_CellularSMS::create_pdu(const char *phone_number, const char *message, 
     // message 7-bit padded and it will be converted to hex so it will take twice as much space
     totalPDULength += (message_length - (message_length / 8)) * 2;
 
-    char *pdu = new char[totalPDULength];
-    memset(pdu, 0, totalPDULength);
+    char *pdu = (char *)calloc(totalPDULength, sizeof(char));
+    if (!pdu) {
+        return NULL;
+    }
+
     int x = 0;
     // See more how to create PDU from 3GPP specification 23040
     // first two define that we use service center number which is set with +CSCA
@@ -383,7 +386,7 @@ char *AT_CellularSMS::create_pdu(const char *phone_number, const char *message, 
         // we might need to send zero length sms
         if (message_length) {
             if (pack_7_bit_gsm_and_hex(message, message_length, pdu + x, paddingBits) == 0) {
-                delete [] pdu;
+                free(pdu);
                 return NULL;
             }
         }
@@ -498,7 +501,7 @@ nsapi_size_or_error_t AT_CellularSMS::send_sms(const char *phone_number, const c
                     _at.cmd_start(ESC);
                     _at.cmd_stop();
                     _at.unlock();
-                    delete [] pdu_str;
+                    free(pdu_str);
                     return msg_write_len;
                 }
 
@@ -508,7 +511,7 @@ nsapi_size_or_error_t AT_CellularSMS::send_sms(const char *phone_number, const c
                 _at.resp_start("+CMGS:");
                 _at.resp_stop();
             }
-            delete [] pdu_str;
+            free(pdu_str);
             remaining_len -= concatenated_sms_length;
             if (_at.get_last_error() != NSAPI_ERROR_OK) {
                 return _at.unlock_return_error();
@@ -622,7 +625,7 @@ nsapi_size_or_error_t AT_CellularSMS::read_sms_from_index(int msg_index, char *b
                     int len = _at.read_string(time_stamp, SMS_MAX_TIME_STAMP_SIZE);
                     if (len < (SMS_MAX_TIME_STAMP_SIZE - 2)) {
                         time_stamp[len++] = ',';
-                        _at.read_string(&time_stamp[len], SMS_MAX_TIME_STAMP_SIZE - len);
+                        _at.read_string(&time_stamp[len], SMS_MAX_TIME_STAMP_SIZE-len);
                     }
                 }
                 (void)_at.consume_to_stop_tag(); // consume until <CR><LF>
@@ -664,8 +667,7 @@ nsapi_size_or_error_t AT_CellularSMS::read_sms(sms_info_t *sms, char *buf, char 
                     msg_len = _at.read_int();
                     if (msg_len > 0) {
                         pduSize = msg_len * 2 + 20; // *2 as it's hex encoded and +20 as service center number is not included in size given by CMGR
-                        pdu = new char[pduSize];
-                        memset(pdu, 0, pduSize);
+                        pdu = (char *)calloc(pduSize, sizeof(char));
                         if (!pdu) {
                             _at.resp_stop();
                             return NSAPI_ERROR_NO_MEMORY;
@@ -676,12 +678,12 @@ nsapi_size_or_error_t AT_CellularSMS::read_sms(sms_info_t *sms, char *buf, char 
                             if (msg_len >= 0) { // we need to allow zero length messages
                                 index += msg_len;
                             } else {
-                                delete [] pdu;
+                                free(pdu);
                                 _at.resp_stop();
                                 return -1;
                             }
                         }
-                        delete [] pdu;
+                        free(pdu);
                     }
                 }
             }
@@ -1060,8 +1062,7 @@ nsapi_error_t AT_CellularSMS::list_messages()
             _at.skip_param(2); // <stat>,[<alpha>]
             length = _at.read_int();
             length = length * 2 + 20; // *2 as it's hex encoded and +20 as service center number is not included in size given by CMGL
-            pdu = new char[length];
-            memset(pdu, 0, length);
+            pdu = (char *)calloc(length, sizeof(char));
             if (!pdu) {
                 delete info;
                 _at.resp_stop();
@@ -1085,7 +1086,7 @@ nsapi_error_t AT_CellularSMS::list_messages()
             delete info;
             info = NULL;
         }
-        delete [] pdu;
+        free(pdu);
         pdu = NULL;
     }
 
@@ -1193,7 +1194,7 @@ uint16_t AT_CellularSMS::pack_7_bit_gsm_and_hex(const char *str, uint16_t len, c
         return 0;
     }
     // convert to 7bit gsm first
-    char *gsm_str = new char[len];
+    char *gsm_str = (char *)malloc(len);
     if (!gsm_str) {
         return 0;
     }
@@ -1235,7 +1236,7 @@ uint16_t AT_CellularSMS::pack_7_bit_gsm_and_hex(const char *str, uint16_t len, c
         i++;
     }
 
-    delete [] gsm_str;
+    free(gsm_str);
 
     return i;
 }

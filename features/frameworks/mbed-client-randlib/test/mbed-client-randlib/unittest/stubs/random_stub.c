@@ -1,8 +1,7 @@
 /*
  * Copyright (c) 2016, ARM Limited, All Rights Reserved
  */
-
-#include "ns_types.h"
+#include "random_stub.h"
 
 static uint32_t seed_value = 4;
 static bool seed_inc = false;

@@ -17,6 +17,7 @@
 #ifndef __INCLUDE_CALLBACK_HANDLER_H__
 #define __INCLUDE_CALLBACK_HANDLER_H__
 
+#include "mbed.h"
 #include "mesh_interface_types.h"
 
 #ifdef __cplusplus

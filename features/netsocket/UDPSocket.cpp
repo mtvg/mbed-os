@@ -20,7 +20,6 @@
 
 UDPSocket::UDPSocket()
 {
-    _socket_stats.stats_update_proto(this, NSAPI_UDP);
 }
 
 UDPSocket::~UDPSocket()
@@ -35,8 +34,6 @@ nsapi_protocol_t UDPSocket::get_proto()
 nsapi_error_t UDPSocket::connect(const SocketAddress &address)
 {
     _remote_peer = address;
-    _socket_stats.stats_update_peer(this, _remote_peer);
-    _socket_stats.stats_update_socket_state(this, SOCK_CONNECTED);
     return NSAPI_ERROR_OK;
 }
 
@@ -60,20 +57,16 @@ nsapi_size_or_error_t UDPSocket::sendto(const SocketAddress &address, const void
     nsapi_size_or_error_t ret;
 
     _writers++;
-    if (_socket) {
-        _socket_stats.stats_update_socket_state(this, SOCK_OPEN);
-        _socket_stats.stats_update_peer(this, address);
-    }
+
     while (true) {
         if (!_socket) {
             ret = NSAPI_ERROR_NO_SOCKET;
             break;
         }
 
-        core_util_atomic_flag_clear(&_pending);
+        _pending = 0;
         nsapi_size_or_error_t sent = _stack->socket_sendto(_socket, address, data, size);
         if ((0 == _timeout) || (NSAPI_ERROR_WOULD_BLOCK != sent)) {
-            _socket_stats.stats_update_sent_bytes(this, sent);
             ret = sent;
             break;
         } else {
@@ -121,16 +114,13 @@ nsapi_size_or_error_t UDPSocket::recvfrom(SocketAddress *address, void *buffer, 
 
     _readers++;
 
-    if (_socket) {
-        _socket_stats.stats_update_socket_state(this, SOCK_OPEN);
-    }
     while (true) {
         if (!_socket) {
             ret = NSAPI_ERROR_NO_SOCKET;
             break;
         }
 
-        core_util_atomic_flag_clear(&_pending);
+        _pending = 0;
         nsapi_size_or_error_t recv = _stack->socket_recvfrom(_socket, address, buffer, size);
 
         // Filter incomming packets using connected peer address
@@ -138,11 +128,9 @@ nsapi_size_or_error_t UDPSocket::recvfrom(SocketAddress *address, void *buffer, 
             continue;
         }
 
-        _socket_stats.stats_update_peer(this, _remote_peer);
         // Non-blocking sockets always return. Blocking only returns when success or errors other than WOULD_BLOCK
         if ((0 == _timeout) || (NSAPI_ERROR_WOULD_BLOCK != recv)) {
             ret = recv;
-            _socket_stats.stats_update_recv_bytes(this, recv);
             break;
         } else {
             uint32_t flag;

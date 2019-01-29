@@ -22,7 +22,7 @@
  * Reference: "K66 Sub-Family Reference Manual, Rev. 2", chapter 38
  */
 
-#if DEVICE_TRNG
+#if defined(DEVICE_TRNG)
 
 #include <stdlib.h>
 #include "cmsis.h"

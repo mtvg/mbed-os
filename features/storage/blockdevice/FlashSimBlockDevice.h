@@ -19,16 +19,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-/** \addtogroup storage */
-/** @{*/
-
 #ifndef MBED_FLASH_SIM_BLOCK_DEVICE_H
 #define MBED_FLASH_SIM_BLOCK_DEVICE_H
 
 #include "BlockDevice.h"
-
-namespace mbed {
 
 enum {
     BD_ERROR_NOT_ERASED       = -3201,
@@ -136,12 +130,6 @@ public:
      */
     virtual bd_size_t size() const;
 
-    /** Get the BlockDevice class type.
-     *
-     *  @return         A string represent the BlockDevice class type.
-     */
-    virtual const char *get_type() const;
-
 private:
     uint8_t _erase_value;
     bd_size_t _blank_buf_size;
@@ -151,13 +139,4 @@ private:
     bool _is_initialized;
 };
 
-} // namespace mbed
-
-// Added "using" for backwards compatibility
-#ifndef MBED_NO_GLOBAL_USING_DIRECTIVE
-using mbed::FlashSimBlockDevice;
 #endif
-
-#endif
-
-/** @}*/

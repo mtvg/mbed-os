@@ -60,12 +60,10 @@ class GCC(mbedToolchain):
             self.cpu = ["-mcpu=cortex-m7"]
         elif target.core.startswith("Cortex-M23"):
             self.cpu = ["-mcpu=cortex-m23"]
-        elif target.core.startswith("Cortex-M33FD"):
-            self.cpu = ["-mcpu=cortex-m33"]
         elif target.core.startswith("Cortex-M33F"):
             self.cpu = ["-mcpu=cortex-m33+nodsp"]
         elif target.core.startswith("Cortex-M33"):
-            self.cpu = ["-march=armv8-m.main"]
+            self.cpu = ["-mcpu=cortex-m33+nodsp+nofp"]
         else:
             self.cpu = ["-mcpu={}".format(target.core.lower())]
 
@@ -81,9 +79,6 @@ class GCC(mbedToolchain):
             self.cpu.append("-mfloat-abi=softfp")
         elif target.core == "Cortex-M7FD":
             self.cpu.append("-mfpu=fpv5-d16")
-            self.cpu.append("-mfloat-abi=softfp")
-        elif target.core.startswith("Cortex-M33F"):
-            self.cpu.append("-mfpu=fpv5-sp-d16")
             self.cpu.append("-mfloat-abi=softfp")
 
         if target.core == "Cortex-A9":
@@ -102,12 +97,8 @@ class GCC(mbedToolchain):
                 "-Wl,--cmse-implib",
                 "-Wl,--out-implib=%s" % join(build_dir, "cmse_lib.o")
             ])
-
-        # Add linking time preprocessor macro DOMAIN_NS
-        if ((target.core.startswith("Cortex-M23") or
-             target.core.startswith("Cortex-M33")) and
-            target.core.endswith("-NS")):
-            self.flags["ld"].append("-DDOMAIN_NS=1")
+        elif target.core == "Cortex-M23-NS" or target.core == "Cortex-M33-NS" or target.core == "Cortex-M33F-NS":
+             self.flags["ld"].append("-DDOMAIN_NS=1")
 
         self.flags["common"] += self.cpu
 

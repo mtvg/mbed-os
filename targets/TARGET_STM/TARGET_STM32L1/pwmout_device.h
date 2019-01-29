@@ -36,7 +36,7 @@
 extern "C" {
 #endif
 
-#if DEVICE_PWMOUT
+#ifdef DEVICE_PWMOUT
 
 /*  L1 HAL do not offer Output Compare idle nor inverted mode*/
 #define PWMOUT_INVERTED_NOT_SUPPORTED

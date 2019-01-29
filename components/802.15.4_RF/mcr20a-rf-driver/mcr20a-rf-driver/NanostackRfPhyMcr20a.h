@@ -17,14 +17,11 @@
 #ifndef NANOSTACK_PHY_MCR20A_H_
 #define NANOSTACK_PHY_MCR20A_H_
 
-#if defined(MBED_CONF_NANOSTACK_CONFIGURATION) && DEVICE_SPI && defined(MBED_CONF_RTOS_PRESENT)
-#include "inttypes.h"
+#include "mbed.h"
+
+#if defined(MBED_CONF_NANOSTACK_CONFIGURATION) && DEVICE_SPI
+
 #include "NanostackRfPhy.h"
-#include "DigitalIn.h"
-#include "DigitalOut.h"
-#include "InterruptIn.h"
-#include "SPI.h"
-#include "rtos.h"
 
 // Arduino pin defaults for convenience
 #if !defined(MCR20A_SPI_MOSI)

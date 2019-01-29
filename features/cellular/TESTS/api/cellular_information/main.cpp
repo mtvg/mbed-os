@@ -39,37 +39,53 @@
 
 
 #include "AT_CellularInformation.h"
-#include "CellularContext.h"
+#include "CellularConnectionFSM.h"
 #include "CellularDevice.h"
 #include "../../cellular_tests_common.h"
 
-static CellularContext *ctx;
+#define SIM_TIMEOUT (180*1000)
+
+static UARTSerial cellular_serial(MDMTXD, MDMRXD, MBED_CONF_PLATFORM_DEFAULT_SERIAL_BAUD_RATE);
+static EventQueue queue(2 * EVENTS_EVENT_SIZE);
+static CellularConnectionFSM cellular;
+static CellularConnectionFSM::CellularState cellular_target_state;
+static rtos::Semaphore fsm_semaphore(0);
+
+static bool fsm_callback(int state, int next_state)
+{
+    if (next_state == CellularConnectionFSM::STATE_SIM_PIN) {
+        TEST_ASSERT(fsm_semaphore.release() == osOK);
+        return false;
+    }
+    return true;
+}
 
 static void init_to_sim_state()
 {
-    ctx = CellularContext::get_default_instance();
-    TEST_ASSERT(ctx != NULL);
-    ctx->set_sim_pin(MBED_CONF_APP_CELLULAR_SIM_PIN);
-#ifdef MBED_CONF_APP_APN
-    ctx->set_credentials(MBED_CONF_APP_APN);
+    cellular.set_serial(&cellular_serial);
+    TEST_ASSERT(cellular.init() == NSAPI_ERROR_OK);
+#if defined (MDMRTS) && defined (MDMCTS)
+    cellular_serial.set_flow_control(SerialBase::RTSCTS, MDMRTS, MDMCTS);
 #endif
-    TEST_ASSERT(ctx->set_sim_ready() == NSAPI_ERROR_OK);
+    cellular.set_callback(&fsm_callback);
+    TEST_ASSERT(cellular.start_dispatch() == NSAPI_ERROR_OK);
+    cellular_target_state = CellularConnectionFSM::STATE_SIM_PIN;
+    TEST_ASSERT(cellular.continue_to_state(cellular_target_state) == NSAPI_ERROR_OK);
+    TEST_ASSERT(fsm_semaphore.wait(SIM_TIMEOUT) == 1);
 }
 
 static void test_information_interface()
 {
-    CellularDevice *dev = CellularDevice::get_default_instance();
-
-    CellularInformation *info = dev->open_information();
+    CellularInformation *info = cellular.get_device()->open_information(&cellular_serial);
     const int kbuf_size = 100;
-    char *buf = new char[kbuf_size];
+    char *buf = (char *)malloc(sizeof(char) * kbuf_size);
 
     TEST_ASSERT(info->get_manufacturer(buf, kbuf_size) == NSAPI_ERROR_OK);
     TEST_ASSERT(info->get_model(buf, kbuf_size) == NSAPI_ERROR_OK);
     TEST_ASSERT(info->get_revision(buf, kbuf_size) == NSAPI_ERROR_OK);
     TEST_ASSERT((info->get_serial_number(buf, kbuf_size, CellularInformation::SN) == NSAPI_ERROR_OK) ||
-                ((((AT_CellularInformation *)info)->get_device_error().errType == 3) &&    // 3 == CME error from the modem
-                 (((AT_CellularInformation *)info)->get_device_error().errCode == 4)));     // 4 == "operation not supported"
+               ((((AT_CellularInformation *)info)->get_device_error().errType == 3) &&    // 3 == CME error from the modem
+               (((AT_CellularInformation *)info)->get_device_error().errCode == 4)));     // 4 == "operation not supported"
 
     nsapi_error_t err = info->get_serial_number(buf, kbuf_size, CellularInformation::IMEI);
     TEST_ASSERT(err == NSAPI_ERROR_UNSUPPORTED || err == NSAPI_ERROR_OK);
@@ -80,9 +96,9 @@ static void test_information_interface()
     err = info->get_serial_number(buf, kbuf_size, CellularInformation::SVN);
     TEST_ASSERT(err == NSAPI_ERROR_UNSUPPORTED || err == NSAPI_ERROR_OK);
 
-    dev->close_information();
+    cellular.get_device()->close_information();
 
-    delete [] buf;
+    free(buf);
 }
 
 using namespace utest::v1;

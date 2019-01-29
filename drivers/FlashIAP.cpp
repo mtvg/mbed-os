@@ -25,11 +25,9 @@
 #include <algorithm>
 #include "FlashIAP.h"
 #include "platform/mbed_assert.h"
-#include "platform/ScopedRamExecutionLock.h"
-#include "platform/ScopedRomWriteLock.h"
 
 
-#if DEVICE_FLASH
+#ifdef DEVICE_FLASH
 
 namespace mbed {
 
@@ -58,12 +56,8 @@ int FlashIAP::init()
 {
     int ret = 0;
     _mutex->lock();
-    {
-        ScopedRamExecutionLock make_ram_executable;
-        ScopedRomWriteLock make_rom_writable;
-        if (flash_init(&_flash)) {
-            ret = -1;
-        }
+    if (flash_init(&_flash)) {
+        ret = -1;
     }
     uint32_t page_size = get_page_size();
     _page_buf = new uint8_t[page_size];
@@ -76,12 +70,8 @@ int FlashIAP::deinit()
 {
     int ret = 0;
     _mutex->lock();
-    {
-        ScopedRamExecutionLock make_ram_executable;
-        ScopedRomWriteLock make_rom_writable;
-        if (flash_free(&_flash)) {
-            ret = -1;
-        }
+    if (flash_free(&_flash)) {
+        ret = -1;
     }
     delete[] _page_buf;
     _mutex->unlock();
@@ -93,11 +83,7 @@ int FlashIAP::read(void *buffer, uint32_t addr, uint32_t size)
 {
     int32_t ret = -1;
     _mutex->lock();
-    {
-        ScopedRamExecutionLock make_ram_executable;
-        ScopedRomWriteLock make_rom_writable;
-        ret = flash_read(&_flash, addr, (uint8_t *) buffer, size);
-    }
+    ret = flash_read(&_flash, addr, (uint8_t *) buffer, size);
     _mutex->unlock();
     return ret;
 }
@@ -140,13 +126,9 @@ int FlashIAP::program(const void *buffer, uint32_t addr, uint32_t size)
             prog_buf = buf;
             prog_size = chunk;
         }
-        {
-            ScopedRamExecutionLock make_ram_executable;
-            ScopedRomWriteLock make_rom_writable;
-            if (flash_program_page(&_flash, addr, prog_buf, prog_size)) {
-                ret = -1;
-                break;
-            }
+        if (flash_program_page(&_flash, addr, prog_buf, prog_size)) {
+            ret = -1;
+            break;
         }
         size -= chunk;
         addr += chunk;
@@ -188,11 +170,7 @@ int FlashIAP::erase(uint32_t addr, uint32_t size)
     int32_t ret = 0;
     _mutex->lock();
     while (size) {
-        {
-            ScopedRamExecutionLock make_ram_executable;
-            ScopedRomWriteLock make_rom_writable;
-            ret = flash_erase_sector(&_flash, addr);
-        }
+        ret = flash_erase_sector(&_flash, addr);
         if (ret != 0) {
             ret = -1;
             break;
@@ -223,11 +201,6 @@ uint32_t FlashIAP::get_flash_start() const
 uint32_t FlashIAP::get_flash_size() const
 {
     return flash_get_size(&_flash);
-}
-
-uint8_t FlashIAP::get_erase_value() const
-{
-    return flash_get_erase_value(&_flash);
 }
 
 }

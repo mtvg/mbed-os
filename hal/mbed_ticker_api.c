@@ -1,6 +1,5 @@
 /* mbed Microcontroller Library
  * Copyright (c) 2015 ARM Limited
- * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -416,16 +415,13 @@ timestamp_t ticker_read(const ticker_data_t *const ticker)
 
 us_timestamp_t ticker_read_us(const ticker_data_t *const ticker)
 {
-    us_timestamp_t ret;
-
     initialize(ticker);
 
     core_util_critical_section_enter();
     update_present_time(ticker);
-    ret = ticker->queue->present_time;
     core_util_critical_section_exit();
 
-    return ret;
+    return ticker->queue->present_time;
 }
 
 int ticker_get_next_timestamp(const ticker_data_t *const data, timestamp_t *timestamp)

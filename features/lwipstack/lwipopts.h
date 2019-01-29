@@ -25,7 +25,7 @@
 #include <sys/time.h>
 #endif
 
-// Operating System
+// Operating System 
 #define NO_SYS                      0
 
 #if MBED_CONF_LWIP_IPV4_ENABLED
@@ -157,14 +157,6 @@
 // TCP sender buffer space (bytes).
 #ifdef MBED_CONF_LWIP_TCP_WND
 #define TCP_WND                     MBED_CONF_LWIP_TCP_WND
-#endif
-
-#ifdef MBED_CONF_LWIP_TCP_MAXRTX
-#define TCP_MAXRTX                  MBED_CONF_LWIP_TCP_MAXRTX
-#endif
-
-#ifdef MBED_CONF_LWIP_TCP_SYNMAXRTX
-#define TCP_SYNMAXRTX               MBED_CONF_LWIP_TCP_SYNMAXRTX
 #endif
 
 // Number of pool pbufs.
@@ -339,7 +331,6 @@
 #define LWIP_ETHERNET               0
 #endif // MBED_CONF_LWIP_ETHERNET_ENABLED
 
-#define LWIP_L3IP   				0
 // Note generic macro name used rather than MBED_CONF_LWIP_PPP_ENABLED
 // to allow users like PPPCellularInterface to detect that nsapi_ppp.h is available.
 #if NSAPI_PPP_AVAILABLE

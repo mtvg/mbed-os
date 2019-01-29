@@ -103,7 +103,7 @@ void equeue_background(equeue_t *queue,
 
 }
 
-int equeue_chain(equeue_t *queue, equeue_t *target)
+void equeue_chain(equeue_t *queue, equeue_t *target)
 {
 
 }

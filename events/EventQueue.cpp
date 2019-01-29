@@ -1,6 +1,5 @@
 /* events
  * Copyright (c) 2016 ARM Limited
- * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,12 +70,12 @@ void EventQueue::background(Callback<void(int)> update)
     }
 }
 
-int EventQueue::chain(EventQueue *target)
+void EventQueue::chain(EventQueue *target)
 {
     if (target) {
-        return equeue_chain(&_equeue, &target->_equeue);
+        equeue_chain(&_equeue, &target->_equeue);
     } else {
-        return equeue_chain(&_equeue, 0);
+        equeue_chain(&_equeue, 0);
     }
 }
 }

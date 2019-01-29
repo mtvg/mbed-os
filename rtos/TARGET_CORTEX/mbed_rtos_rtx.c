@@ -1,6 +1,5 @@
 /* mbed Microcontroller Library
  * Copyright (c) 2018-2018 ARM Limited
- * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,34 +23,13 @@
 #include "mbed_critical.h"
 #include "mbed_boot.h"
 
-#if defined(TARGET_PSA)
-#include "spm_init.h"
-#include "spm_api.h"
-#endif
-
-
-#if defined(COMPONENT_NSPE) && defined(COMPONENT_SPM_MAILBOX)
-
-MBED_ALIGN(8) char psa_spm_dispatcher_th_stack[0x100];
-mbed_rtos_storage_thread_t psa_spm_dispatcher_th_tcb;
-const osThreadAttr_t psa_spm_dispatcher_th_attr = {
-    .name       = "SPM_DISP",
-    .priority   = osPriorityNormal,
-    .stack_mem  = psa_spm_dispatcher_th_stack,
-    .stack_size = sizeof(psa_spm_dispatcher_th_stack),
-    .cb_mem     = &psa_spm_dispatcher_th_tcb,
-    .cb_size    = sizeof(psa_spm_dispatcher_th_tcb)
-};
-
-#endif // defined(COMPONENT_NSPE) && defined(COMPONENT_SPM_MAILBOX)
-
 osThreadAttr_t _main_thread_attr;
 
 #ifndef MBED_CONF_APP_MAIN_STACK_SIZE
 #define MBED_CONF_APP_MAIN_STACK_SIZE MBED_CONF_RTOS_MAIN_THREAD_STACK_SIZE
 #endif
 MBED_ALIGN(8) char _main_stack[MBED_CONF_APP_MAIN_STACK_SIZE];
-mbed_rtos_storage_thread_t _main_obj __attribute__((section(".bss.os.thread.cb")));
+mbed_rtos_storage_thread_t _main_obj;
 
 osMutexId_t               singleton_mutex_id;
 mbed_rtos_storage_mutex_t singleton_mutex_obj;
@@ -80,23 +58,6 @@ MBED_NORETURN void mbed_rtos_start()
 #if defined(DOMAIN_NS) && (DOMAIN_NS == 1U)
     _main_thread_attr.tz_module = 1U;
 #endif
-
-#if defined(COMPONENT_SPM_MAILBOX)
-    spm_ipc_mailbox_init();
-#endif // defined(COMPONENT_SPM_MAILBOX)
-
-#if defined(COMPONENT_SPE)
-    // At this point, the mailbox is already initialized
-    spm_hal_start_nspe();
-    psa_spm_init();
-#endif // defined(COMPONENT_SPE)
-
-#if defined(COMPONENT_NSPE) && defined(COMPONENT_SPM_MAILBOX)
-    osThreadId_t spm_result = osThreadNew((osThreadFunc_t)psa_spm_mailbox_dispatcher, NULL, &psa_spm_dispatcher_th_attr);
-    if ((void *)spm_result == NULL) {
-        MBED_ERROR1(MBED_MAKE_ERROR(MBED_MODULE_PLATFORM, MBED_ERROR_CODE_INITIALIZATION_FAILED), "Dispatcher thread not created", &psa_spm_dispatcher_th_attr);
-    }
-#endif // defined(COMPONENT_NSPE) && defined(COMPONENT_SPM_MAILBOX)
 
     singleton_mutex_id = osMutexNew(&singleton_mutex_attr);
     osThreadId_t result = osThreadNew((osThreadFunc_t)mbed_start, NULL, &_main_thread_attr);

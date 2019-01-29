@@ -33,7 +33,8 @@ extern "C" {
 /**
  * @brief WS channel functions.
  */
-typedef enum {
+typedef enum
+{
     /** Fixed channel. */
     WS_FIXED_CHANNEL,
     /** TR51 channel function. */
@@ -48,7 +49,8 @@ typedef enum {
  * \brief Struct fhss_tuning_parameter defines FHSS tuning parameters.
  * All delays are given in microseconds.
  */
-typedef struct fhss_tuning_parameter {
+typedef struct fhss_tuning_parameter
+{
     /** Delay between data pushed to PHY TX function and TX started (Contains CSMA-CA maximum random period). */
     uint32_t tx_processing_delay;
 
@@ -62,7 +64,8 @@ typedef struct fhss_tuning_parameter {
 /**
  * \brief Struct fhss_configuration defines basic configuration of FHSS.
  */
-typedef struct fhss_configuration {
+typedef struct fhss_configuration
+{
     /** Tuning parameters can be used to enhance synchronization accuracy*/
     fhss_tuning_parameter_t fhss_tuning_parameters;
 
@@ -91,12 +94,10 @@ typedef int32_t fhss_vendor_defined_cf(const fhss_api_t *api, uint16_t slot, uin
 /**
  * \brief Struct fhss_ws_configuration defines configuration of WS FHSS.
  */
-typedef struct fhss_ws_configuration {
-    /** WS unicast channel function. */
-    fhss_ws_channel_functions ws_uc_channel_function;
-
-    /** WS broadcast channel function. */
-    fhss_ws_channel_functions ws_bc_channel_function;
+typedef struct fhss_ws_configuration
+{
+    /** WS channel function. */
+    fhss_ws_channel_functions ws_channel_function;
 
     /** Broadcast schedule identifier. */
     uint16_t bsi;
@@ -110,12 +111,6 @@ typedef struct fhss_ws_configuration {
     /** Broadcast dwell interval. Range: 15-250 milliseconds. */
     uint8_t fhss_bc_dwell_interval;
 
-    /** Unicast fixed channel */
-    uint8_t unicast_fixed_channel;
-
-    /** Broadcast fixed channel */
-    uint8_t broadcast_fixed_channel;
-
     /** Channel mask. */
     uint32_t channel_mask[8];
 
@@ -128,7 +123,8 @@ typedef struct fhss_ws_configuration {
  * \brief Struct fhss_timer defines interface between FHSS and FHSS platform timer.
  * Application must implement FHSS timer driver which is then used by FHSS with this interface.
  */
-typedef struct fhss_timer {
+typedef struct fhss_timer
+{
     /** Start timeout (1us). Timer must support multiple simultaneous timeouts */
     int (*fhss_timer_start)(uint32_t, void (*fhss_timer_callback)(const fhss_api_t *fhss_api, uint16_t), const fhss_api_t *fhss_api);
 
@@ -149,7 +145,8 @@ typedef struct fhss_timer {
  * \brief Struct fhss_synch_configuration defines the synchronization time configurations.
  * Border router application must define and set these configuration for FHSS network.
  */
-typedef struct fhss_synch_configuration {
+typedef struct fhss_synch_configuration
+{
     /** Number of broadcast channels. */
     uint8_t fhss_number_of_bc_channels;
 
@@ -168,7 +165,8 @@ typedef struct fhss_synch_configuration {
 /**
  * \brief Struct fhss_statistics defines the available FHSS statistics.
  */
-typedef struct fhss_statistics {
+typedef struct fhss_statistics
+{
     /** FHSS synchronization drift compensation (us/channel). */
     int16_t fhss_drift_compensation;
 

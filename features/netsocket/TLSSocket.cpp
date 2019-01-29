@@ -25,17 +25,14 @@
 
 nsapi_error_t TLSSocket::connect(const char *host, uint16_t port)
 {
-    nsapi_error_t ret = NSAPI_ERROR_OK;
-    if (!is_handshake_started()) {
-        ret = tcp_socket.connect(host, port);
-        if (ret == NSAPI_ERROR_OK || ret == NSAPI_ERROR_IN_PROGRESS) {
-            set_hostname(host);
-        }
-        if (ret != NSAPI_ERROR_OK && ret != NSAPI_ERROR_IS_CONNECTED) {
-            return ret;
-        }
+    set_hostname(host);
+
+    nsapi_error_t ret = tcp_socket.connect(host, port);
+    if (ret) {
+        return ret;
     }
-    return TLSSocketWrapper::start_handshake(ret == NSAPI_ERROR_OK);
+
+    return TLSSocketWrapper::do_handshake();
 }
 
 TLSSocket::~TLSSocket()

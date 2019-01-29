@@ -106,16 +106,16 @@ uint32_t mPhyIrqDisableCnt = 1;
 *---------------------------------------------------------------------------*/
 void MCR20Drv_Init
 (
-    void
+void
 )
 {
     xcvr_spi_init(gXcvrSpiInstance_c);
     xcvr_spi_configure_speed(gXcvrSpiInstance_c, 8000000);
 
     gXcvrDeassertCS_d();
-#if !defined(TARGET_KW24D)
-    MCR20Drv_RST_B_Deassert();
-#endif
+    #if !defined(TARGET_KW24D)
+      MCR20Drv_RST_B_Deassert();
+    #endif
     RF_IRQ_Init();
     RF_IRQ_Disable();
     mPhyIrqDisableCnt = 1;
@@ -129,8 +129,8 @@ void MCR20Drv_Init
 *---------------------------------------------------------------------------*/
 void MCR20Drv_DirectAccessSPIWrite
 (
-    uint8_t address,
-    uint8_t value
+uint8_t address,
+uint8_t value
 )
 {
     uint16_t txData;
@@ -158,14 +158,15 @@ void MCR20Drv_DirectAccessSPIWrite
 *---------------------------------------------------------------------------*/
 void MCR20Drv_DirectAccessSPIMultiByteWrite
 (
-    uint8_t startAddress,
-    uint8_t *byteArray,
-    uint8_t numOfBytes
+uint8_t startAddress,
+uint8_t * byteArray,
+uint8_t numOfBytes
 )
 {
     uint8_t txData;
 
-    if ((numOfBytes == 0) || (byteArray == 0)) {
+    if( (numOfBytes == 0) || (byteArray == 0) )
+    {
         return;
     }
 
@@ -192,8 +193,8 @@ void MCR20Drv_DirectAccessSPIMultiByteWrite
 *---------------------------------------------------------------------------*/
 void MCR20Drv_PB_SPIByteWrite
 (
-    uint8_t address,
-    uint8_t value
+uint8_t address,
+uint8_t value
 )
 {
     uint32_t txData;
@@ -205,12 +206,12 @@ void MCR20Drv_PB_SPIByteWrite
     gXcvrAssertCS_d();
 
     txData  = TransceiverSPI_WriteSelect            |
-              TransceiverSPI_PacketBuffAccessSelect |
-              TransceiverSPI_PacketBuffByteModeSelect;
+        TransceiverSPI_PacketBuffAccessSelect |
+            TransceiverSPI_PacketBuffByteModeSelect;
     txData |= (address) << 8;
     txData |= (value)   << 16;
 
-    xcvr_spi_transfer(gXcvrSpiInstance_c, (uint8_t *)&txData, 0, 3);
+    xcvr_spi_transfer(gXcvrSpiInstance_c, (uint8_t*)&txData, 0, 3);
 
     gXcvrDeassertCS_d();
     UnprotectFromMCR20Interrupt();
@@ -224,13 +225,14 @@ void MCR20Drv_PB_SPIByteWrite
 *---------------------------------------------------------------------------*/
 void MCR20Drv_PB_SPIBurstWrite
 (
-    uint8_t *byteArray,
-    uint8_t numOfBytes
+uint8_t * byteArray,
+uint8_t numOfBytes
 )
 {
     uint8_t txData;
 
-    if ((numOfBytes == 0) || (byteArray == 0)) {
+    if( (numOfBytes == 0) || (byteArray == 0) )
+    {
         return;
     }
 
@@ -241,8 +243,8 @@ void MCR20Drv_PB_SPIBurstWrite
     gXcvrAssertCS_d();
 
     txData = TransceiverSPI_WriteSelect            |
-             TransceiverSPI_PacketBuffAccessSelect |
-             TransceiverSPI_PacketBuffBurstModeSelect;
+        TransceiverSPI_PacketBuffAccessSelect |
+            TransceiverSPI_PacketBuffBurstModeSelect;
 
     xcvr_spi_transfer(gXcvrSpiInstance_c, &txData, 0, 1);
     xcvr_spi_transfer(gXcvrSpiInstance_c, byteArray, 0, numOfBytes);
@@ -260,7 +262,7 @@ void MCR20Drv_PB_SPIBurstWrite
 
 uint8_t MCR20Drv_DirectAccessSPIRead
 (
-    uint8_t address
+uint8_t address
 )
 {
     uint8_t txData;
@@ -273,7 +275,7 @@ uint8_t MCR20Drv_DirectAccessSPIRead
     gXcvrAssertCS_d();
 
     txData = (address & TransceiverSPI_DirectRegisterAddressMask) |
-             TransceiverSPI_ReadSelect;
+        TransceiverSPI_ReadSelect;
 
     xcvr_spi_transfer(gXcvrSpiInstance_c, &txData, 0, sizeof(txData));
     xcvr_spi_transfer(gXcvrSpiInstance_c, 0, &rxData, sizeof(rxData));
@@ -293,15 +295,16 @@ uint8_t MCR20Drv_DirectAccessSPIRead
 *---------------------------------------------------------------------------*/
 uint8_t MCR20Drv_DirectAccessSPIMultiByteRead
 (
-    uint8_t startAddress,
-    uint8_t *byteArray,
-    uint8_t numOfBytes
+uint8_t startAddress,
+uint8_t * byteArray,
+uint8_t numOfBytes
 )
 {
     uint8_t  txData;
     uint8_t  phyIRQSTS1;
 
-    if ((numOfBytes == 0) || (byteArray == 0)) {
+    if( (numOfBytes == 0) || (byteArray == 0) )
+    {
         return 0;
     }
 
@@ -312,7 +315,7 @@ uint8_t MCR20Drv_DirectAccessSPIMultiByteRead
     gXcvrAssertCS_d();
 
     txData = (startAddress & TransceiverSPI_DirectRegisterAddressMask) |
-             TransceiverSPI_ReadSelect;
+        TransceiverSPI_ReadSelect;
 
     xcvr_spi_transfer(gXcvrSpiInstance_c, &txData, &phyIRQSTS1, sizeof(txData));
     xcvr_spi_transfer(gXcvrSpiInstance_c, 0, byteArray, numOfBytes);
@@ -331,14 +334,15 @@ uint8_t MCR20Drv_DirectAccessSPIMultiByteRead
 *---------------------------------------------------------------------------*/
 uint8_t MCR20Drv_PB_SPIBurstRead
 (
-    uint8_t *byteArray,
-    uint8_t numOfBytes
+uint8_t * byteArray,
+uint8_t numOfBytes
 )
 {
     uint8_t  txData;
     uint8_t  phyIRQSTS1;
 
-    if ((numOfBytes == 0) || (byteArray == 0)) {
+    if( (numOfBytes == 0) || (byteArray == 0) )
+    {
         return 0;
     }
 
@@ -349,8 +353,8 @@ uint8_t MCR20Drv_PB_SPIBurstRead
     gXcvrAssertCS_d();
 
     txData = TransceiverSPI_ReadSelect |
-             TransceiverSPI_PacketBuffAccessSelect |
-             TransceiverSPI_PacketBuffBurstModeSelect;
+        TransceiverSPI_PacketBuffAccessSelect |
+            TransceiverSPI_PacketBuffBurstModeSelect;
 
     xcvr_spi_transfer(gXcvrSpiInstance_c, &txData, &phyIRQSTS1, sizeof(txData));
     xcvr_spi_transfer(gXcvrSpiInstance_c, 0, byteArray, numOfBytes);
@@ -369,8 +373,8 @@ uint8_t MCR20Drv_PB_SPIBurstRead
 *---------------------------------------------------------------------------*/
 void MCR20Drv_IndirectAccessSPIWrite
 (
-    uint8_t address,
-    uint8_t value
+uint8_t address,
+uint8_t value
 )
 {
     uint32_t  txData;
@@ -385,7 +389,7 @@ void MCR20Drv_IndirectAccessSPIWrite
     txData |= (address) << 8;
     txData |= (value)   << 16;
 
-    xcvr_spi_transfer(gXcvrSpiInstance_c, (uint8_t *)&txData, 0, 3);
+    xcvr_spi_transfer(gXcvrSpiInstance_c, (uint8_t*)&txData, 0, 3);
 
     gXcvrDeassertCS_d();
     UnprotectFromMCR20Interrupt();
@@ -399,14 +403,15 @@ void MCR20Drv_IndirectAccessSPIWrite
 *---------------------------------------------------------------------------*/
 void MCR20Drv_IndirectAccessSPIMultiByteWrite
 (
-    uint8_t startAddress,
-    uint8_t *byteArray,
-    uint8_t numOfBytes
+uint8_t startAddress,
+uint8_t * byteArray,
+uint8_t numOfBytes
 )
 {
     uint16_t  txData;
 
-    if ((numOfBytes == 0) || (byteArray == 0)) {
+    if( (numOfBytes == 0) || (byteArray == 0) )
+    {
         return;
     }
 
@@ -419,8 +424,8 @@ void MCR20Drv_IndirectAccessSPIMultiByteWrite
     txData = TransceiverSPI_IARIndexReg;
     txData |= (startAddress)  << 8;
 
-    xcvr_spi_transfer(gXcvrSpiInstance_c, (uint8_t *)&txData, 0, sizeof(txData));
-    xcvr_spi_transfer(gXcvrSpiInstance_c, (uint8_t *)byteArray, 0, numOfBytes);
+    xcvr_spi_transfer(gXcvrSpiInstance_c, (uint8_t*)&txData, 0, sizeof(txData));
+    xcvr_spi_transfer(gXcvrSpiInstance_c, (uint8_t*)byteArray, 0, numOfBytes);
 
     gXcvrDeassertCS_d();
     UnprotectFromMCR20Interrupt();
@@ -434,7 +439,7 @@ void MCR20Drv_IndirectAccessSPIMultiByteWrite
 *---------------------------------------------------------------------------*/
 uint8_t MCR20Drv_IndirectAccessSPIRead
 (
-    uint8_t address
+uint8_t address
 )
 {
     uint16_t  txData;
@@ -449,7 +454,7 @@ uint8_t MCR20Drv_IndirectAccessSPIRead
     txData = TransceiverSPI_IARIndexReg | TransceiverSPI_ReadSelect;
     txData |= (address) << 8;
 
-    xcvr_spi_transfer(gXcvrSpiInstance_c, (uint8_t *)&txData, 0, sizeof(txData));
+    xcvr_spi_transfer(gXcvrSpiInstance_c, (uint8_t*)&txData, 0, sizeof(txData));
     xcvr_spi_transfer(gXcvrSpiInstance_c, 0, &rxData, sizeof(rxData));
 
     gXcvrDeassertCS_d();
@@ -466,14 +471,15 @@ uint8_t MCR20Drv_IndirectAccessSPIRead
 *---------------------------------------------------------------------------*/
 void MCR20Drv_IndirectAccessSPIMultiByteRead
 (
-    uint8_t startAddress,
-    uint8_t *byteArray,
-    uint8_t numOfBytes
+uint8_t startAddress,
+uint8_t * byteArray,
+uint8_t numOfBytes
 )
 {
     uint16_t  txData;
 
-    if ((numOfBytes == 0) || (byteArray == 0)) {
+    if( (numOfBytes == 0) || (byteArray == 0) )
+    {
         return;
     }
 
@@ -486,7 +492,7 @@ void MCR20Drv_IndirectAccessSPIMultiByteRead
     txData = (TransceiverSPI_IARIndexReg | TransceiverSPI_ReadSelect);
     txData |= (startAddress) << 8;
 
-    xcvr_spi_transfer(gXcvrSpiInstance_c, (uint8_t *)&txData, 0, sizeof(txData));
+    xcvr_spi_transfer(gXcvrSpiInstance_c, (uint8_t*)&txData, 0, sizeof(txData));
     xcvr_spi_transfer(gXcvrSpiInstance_c, 0, byteArray, numOfBytes);
 
     gXcvrDeassertCS_d();
@@ -501,7 +507,7 @@ void MCR20Drv_IndirectAccessSPIMultiByteRead
 *---------------------------------------------------------------------------*/
 uint32_t  MCR20Drv_IsIrqPending
 (
-    void
+void
 )
 {
     return RF_isIRQ_Pending();
@@ -515,12 +521,13 @@ uint32_t  MCR20Drv_IsIrqPending
 *---------------------------------------------------------------------------*/
 void MCR20Drv_IRQ_Disable
 (
-    void
+void
 )
 {
     core_util_critical_section_enter();
 
-    if (mPhyIrqDisableCnt == 0) {
+    if( mPhyIrqDisableCnt == 0 )
+    {
         RF_IRQ_Disable();
     }
 
@@ -537,15 +544,17 @@ void MCR20Drv_IRQ_Disable
 *---------------------------------------------------------------------------*/
 void MCR20Drv_IRQ_Enable
 (
-    void
+void
 )
 {
     core_util_critical_section_enter();
 
-    if (mPhyIrqDisableCnt) {
+    if( mPhyIrqDisableCnt )
+    {
         mPhyIrqDisableCnt--;
 
-        if (mPhyIrqDisableCnt == 0) {
+        if( mPhyIrqDisableCnt == 0 )
+        {
             RF_IRQ_Enable();
         }
     }
@@ -561,7 +570,7 @@ void MCR20Drv_IRQ_Enable
 *---------------------------------------------------------------------------*/
 void MCR20Drv_RST_B_Assert
 (
-    void
+void
 )
 {
     RF_RST_Set(0);
@@ -575,7 +584,7 @@ void MCR20Drv_RST_B_Assert
 *---------------------------------------------------------------------------*/
 void MCR20Drv_RST_B_Deassert
 (
-    void
+void
 )
 {
     RF_RST_Set(1);
@@ -589,7 +598,7 @@ void MCR20Drv_RST_B_Deassert
 *---------------------------------------------------------------------------*/
 void MCR20Drv_SoftRST_Assert
 (
-    void
+void
 )
 {
     MCR20Drv_IndirectAccessSPIWrite(SOFT_RESET, (0x80));
@@ -603,7 +612,7 @@ void MCR20Drv_SoftRST_Assert
 *---------------------------------------------------------------------------*/
 void MCR20Drv_SoftRST_Deassert
 (
-    void
+void
 )
 {
     MCR20Drv_IndirectAccessSPIWrite(SOFT_RESET, (0x00));
@@ -617,7 +626,7 @@ void MCR20Drv_SoftRST_Deassert
 *---------------------------------------------------------------------------*/
 void MCR20Drv_Soft_RESET
 (
-    void
+void
 )
 {
     //assert SOG_RST
@@ -635,19 +644,19 @@ void MCR20Drv_Soft_RESET
 *---------------------------------------------------------------------------*/
 void MCR20Drv_RESET
 (
-    void
+void
 )
 {
-#if !defined(TARGET_KW24D)
+  #if !defined(TARGET_KW24D)
     volatile uint32_t delay = 1000;
     //assert RST_B
     MCR20Drv_RST_B_Assert();
 
-    while (delay--);
+    while(delay--);
 
     //deassert RST_B
     MCR20Drv_RST_B_Deassert();
-#endif
+  #endif
 }
 
 /*---------------------------------------------------------------------------
@@ -658,12 +667,13 @@ void MCR20Drv_RESET
 *---------------------------------------------------------------------------*/
 void MCR20Drv_Set_CLK_OUT_Freq
 (
-    uint8_t freqDiv
+uint8_t freqDiv
 )
 {
     uint8_t clkOutCtrlReg = (freqDiv & cCLK_OUT_DIV_Mask) | cCLK_OUT_EN | cCLK_OUT_EXTEND;
 
-    if (freqDiv == gCLK_OUT_FREQ_DISABLE) {
+    if(freqDiv == gCLK_OUT_FREQ_DISABLE)
+    {
         clkOutCtrlReg = (cCLK_OUT_EXTEND | gCLK_OUT_FREQ_4_MHz); //reset value with clock out disabled
     }
 

@@ -143,8 +143,7 @@ public:
      *       parameter is set to 0.
      *
      */
-    osStatus put(T *data, uint32_t millisec = 0, uint8_t prio = 0)
-    {
+    osStatus put(T* data, uint32_t millisec=0, uint8_t prio=0) {
         return osMessageQueuePut(_id, &data, prio, millisec);
     }
 
@@ -183,8 +182,7 @@ public:
      * @note  You may call this function from ISR context if the millisec
      *        parameter is set to 0.
      */
-    osEvent get(uint32_t millisec = osWaitForever)
-    {
+    osEvent get(uint32_t millisec=osWaitForever) {
         osEvent event;
         T *data = NULL;
         osStatus_t res = osMessageQueueGet(_id, &data, NULL, millisec);

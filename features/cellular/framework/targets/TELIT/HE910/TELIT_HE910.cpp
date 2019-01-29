@@ -18,7 +18,6 @@
 #include "TELIT_HE910.h"
 #include "TELIT_HE910_CellularPower.h"
 #include "TELIT_HE910_CellularNetwork.h"
-#include "TELIT_HE910_CellularContext.h"
 
 using namespace mbed;
 using namespace events;
@@ -29,7 +28,7 @@ static const AT_CellularBase::SupportedFeature unsupported_features[] =  {
     AT_CellularBase::SUPPORTED_FEATURE_END_MARK
 };
 
-TELIT_HE910::TELIT_HE910(FileHandle *fh) : AT_CellularDevice(fh)
+TELIT_HE910::TELIT_HE910(EventQueue &queue) : AT_CellularDevice(queue)
 {
     AT_CellularBase::set_unsupported_features(unsupported_features);
 }
@@ -48,12 +47,7 @@ AT_CellularPower *TELIT_HE910::open_power_impl(ATHandler &at)
     return new TELIT_HE910_CellularPower(at);
 }
 
-AT_CellularContext *TELIT_HE910::create_context_impl(ATHandler &at, const char *apn)
-{
-    return new TELIT_HE910_CellularContext(at, this, apn);
-}
-
-uint16_t TELIT_HE910::get_send_delay() const
+uint16_t TELIT_HE910::get_send_delay()
 {
     return DEFAULT_DELAY_BETWEEN_AT_COMMANDS;
 }

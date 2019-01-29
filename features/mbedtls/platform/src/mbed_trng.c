@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#if DEVICE_TRNG
+#if defined(DEVICE_TRNG)
 
 #include "hal/trng_api.h"
 

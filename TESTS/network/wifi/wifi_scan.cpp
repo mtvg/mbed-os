@@ -24,6 +24,8 @@
 
 using namespace utest::v1;
 
+#if defined(MBED_CONF_APP_WIFI_SECURE_SSID) && defined(MBED_CONF_APP_WIFI_UNSECURE_SSID)
+
 void wifi_scan(void)
 {
     WiFiInterface *wifi = get_interface();
@@ -31,7 +33,7 @@ void wifi_scan(void)
     WiFiAccessPoint ap[MBED_CONF_APP_MAX_SCAN_SIZE];
 
     int size = wifi->scan(ap, MBED_CONF_APP_MAX_SCAN_SIZE);
-    TEST_ASSERT(size >= 1);
+    TEST_ASSERT(size >= 2);
 
     bool secure_found = false;
     bool unsecure_found = false;
@@ -47,19 +49,17 @@ void wifi_scan(void)
         nsapi_security_t security = ap[i].get_security();
         int8_t rssi = ap[i].get_rssi();
         TEST_ASSERT_INT8_WITHIN(-10, -100, rssi);
-#if defined(MBED_CONF_APP_WIFI_SECURE_SSID)
         if (strcmp(MBED_CONF_APP_WIFI_SECURE_SSID, ssid) == 0) {
             secure_found = true;
             TEST_ASSERT_EQUAL_INT(get_security(), security);
         }
-#endif
-#if defined(MBED_CONF_APP_WIFI_UNSECURE_SSID)
         if (strcmp(MBED_CONF_APP_WIFI_UNSECURE_SSID, ssid) == 0) {
             unsecure_found = true;
             TEST_ASSERT_EQUAL_INT(NSAPI_SECURITY_NONE, security);
         }
-#endif
     }
     // Finding one SSID is enough
     TEST_ASSERT_TRUE(secure_found || unsecure_found);
 }
+
+#endif // defined(MBED_CONF_APP_WIFI_SECURE_SSID) && defined(MBED_CONF_APP_WIFI_UNSECURE_SSID)

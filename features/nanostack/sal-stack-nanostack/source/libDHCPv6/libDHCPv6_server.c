@@ -43,12 +43,11 @@ static dhcpv6_gua_server_entry_s *libdhcpv6_server_entry_allocate(void)
     dhcpv6_gua_server_entry_s *entry = ns_dyn_mem_alloc(sizeof(dhcpv6_gua_server_entry_s));
     if (entry) {
         entry->clientIdSequence = 0;
+        entry->enableAddressMapping = false;
         entry->enableAddressAutonous = true;
         entry->clientIdDefaultSuffics = 0x0000000;
         entry->maxSuppertedClients = 200;
         entry->validLifetime = 7200;
-        entry->removeCb = NULL;
-        entry->addCb = NULL;
         ns_list_init(&entry->allocatedAddressList);
     }
     return entry;
@@ -63,7 +62,7 @@ static void libdhcpv6_address_generate(dhcpv6_gua_server_entry_s *serverInfo, dh
         if (entry->linkType == DHCPV6_DUID_HARDWARE_EUI64_TYPE) {
             memcpy(ptr, entry->linkId, 8);
             *ptr ^= 2;
-        } else if (entry->linkType == DHCPV6_DUID_HARDWARE_EUI48_TYPE) {
+        } else if (entry->linkType == DHCPV6_DUID_HARDWARE_EUI64_TYPE) {
             *ptr++  = entry->linkId[0] ^ 2;
             *ptr++  = entry->linkId[1];
             *ptr++  = entry->linkId[2];
@@ -97,9 +96,7 @@ void libdhcpv6_gua_servers_time_update(uint32_t timeUpdateInSeconds)
                     //Stop use this address for leasequery and delete Route or address map
 
                     address->preferredLifetime = 0;
-                    if (cur->removeCb) {
-                        cur->removeCb(cur->interfaceId, address->nonTemporalAddress, cur->guaPrefix);
-                    }
+                    cur->timeoutCb(cur->interfaceId, address->nonTemporalAddress);
                 } else {
                     address->preferredLifetime -= timeUpdateInSeconds;
                 }
@@ -140,16 +137,17 @@ dhcpv6_gua_server_entry_s *libdhcpv6_server_data_get_by_prefix_and_socketinstanc
 }
 
 
-dhcpv6_gua_server_entry_s *libdhcpv6_gua_server_allocate(uint8_t *prefix, int8_t interfaceId, uint8_t *serverDUID, uint16_t serverDUIDType)
+dhcpv6_gua_server_entry_s *libdhcpv6_gua_server_allocate(uint8_t *prefix, int8_t interfaceId, uint8_t *serverDUID, uint16_t serverDUIDType, dhcp_address_prefer_timeout_cb *prefered_timeout_cb)
 {
-    dhcpv6_gua_server_entry_s *entry = libdhcpv6_server_data_get_by_prefix_and_interfaceid(interfaceId, prefix);
-    if (entry == NULL) {
+    dhcpv6_gua_server_entry_s *entry = NULL;
+    if (libdhcpv6_server_data_get_by_prefix_and_interfaceid(interfaceId, prefix) == NULL) {
         entry = libdhcpv6_server_entry_allocate();
         if (entry) {
             memcpy(entry->guaPrefix, prefix, 8);
             memcpy(entry->serverDUID, serverDUID, 8);
             entry->serverLinkType = serverDUIDType;
             entry->interfaceId = interfaceId;
+            entry->timeoutCb = prefered_timeout_cb;
             ns_list_add_to_end(&dhcpv6_gua_server_list, entry);
         }
     }

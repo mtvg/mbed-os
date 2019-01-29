@@ -107,20 +107,14 @@ namespace ble {
  */
 template<typename Target, typename LayoutType = unsigned int>
 struct SafeEnum {
-	/**
-	 * Type of the representation.
-	 */
-	typedef LayoutType representation_t;
 
-protected:
     /**
      * Construction of an enumeration value.
      */
-	explicit SafeEnum(LayoutType value) : _value(value) { }
+	SafeEnum(LayoutType value) : _value(value) { }
 
-public:
     /**
-     * Equal to operator for Target instances.
+     * Equal to operator for SafeEnum instances.
      *
      * @param lhs left hand side of the comparison
      * @param rhs right hand side of the comparison
@@ -128,12 +122,12 @@ public:
      * @return true if the inner value of lhs and rhs are equal and false
      * otherwise.
      */
-	friend bool operator==(Target lhs, Target rhs) {
+	friend bool operator==(SafeEnum lhs, SafeEnum rhs) {
 		return lhs._value == rhs._value;
 	}
 
     /**
-     * Not equal to operator for Target instances.
+     * Not equal to operator for SafeEnum instances.
      *
      * @param lhs left hand side of the comparison
      * @param rhs right hand side of the comparison
@@ -141,24 +135,24 @@ public:
      * @return true if the inner value of lhs and rhs are not equal and false
      * otherwise.
      */
-	friend bool operator!=(Target lhs, Target rhs) {
+	friend bool operator!=(SafeEnum lhs, SafeEnum rhs) {
 		return !(lhs == rhs);
 	}
 
 	/**
-	 * Less than operator for Target instances.
+	 * Less than operator for SafeEnum instances.
 	 *
      * @param lhs left hand side of the comparison
      * @param rhs right hand side of the comparison
      *
      * @return true if the inner value of lhs is less than rhs and false otherwise.
 	 */
-	friend bool operator<(Target lhs, Target rhs) {
+	friend bool operator<(SafeEnum lhs, SafeEnum rhs) {
 	    return lhs.value() < rhs.value();
 	}
 
     /**
-     * Less than or equal to operator for Target instances.
+     * Less than or equal to operator for SafeEnum instances.
      *
      * @param lhs left hand side of the comparison
      * @param rhs right hand side of the comparison
@@ -166,12 +160,12 @@ public:
      * @return true if the inner value of lhs is less than or equal to rhs and
      * false otherwise.
      */
-	friend bool operator<=(Target lhs, Target rhs) {
+	friend bool operator<=(SafeEnum lhs, SafeEnum rhs) {
 	    return lhs.value() < rhs.value() || lhs == rhs;
 	}
 
     /**
-     * Greater than operator for Target instances.
+     * Greater than operator for SafeEnum instances.
      *
      * @param lhs left hand side of the comparison
      * @param rhs right hand side of the comparison
@@ -179,12 +173,12 @@ public:
      * @return true if the inner value of lhs is greater than rhs; false
      * otherwise.
      */
-    friend bool operator>(Target lhs, Target rhs) {
+    friend bool operator>(SafeEnum lhs, SafeEnum rhs) {
         return !(lhs <= rhs);
     }
 
     /**
-     * Greater than or equal to operator for Target instances.
+     * Greater than or equal to operator for SafeEnum instances.
      *
      * @param lhs left hand side of the comparison
      * @param rhs right hand side of the comparison
@@ -192,7 +186,7 @@ public:
      * @return true if the inner value of lhs is greater than or equal to rhs;
      * false otherwise.
      */
-    friend bool operator>=(Target lhs, Target rhs) {
+    friend bool operator>=(SafeEnum lhs, SafeEnum rhs) {
         return !(lhs < rhs);
     }
 
@@ -201,14 +195,6 @@ public:
      */
 	LayoutType value() const {
 		return _value;
-	}
-
-	/**
-	 * Return a pointer to the inner storage.
-	 */
-	const LayoutType* storage() const
-	{
-		return &_value;
 	}
 
 private:
